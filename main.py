@@ -1,7 +1,9 @@
 #!/usr/bin/python3.9
+# -*- coding: utf-8 -*-
+
 import asyncio
 import aiohttp
-from discord.utils import async_all
+
 import orjson
 import cmyui
 from cmyui import log, Ansi
@@ -16,7 +18,16 @@ from discord.ext import commands
 
 import config
 
-TOPPINGS = ('tomatoes', 'lettuce', 'ham', 'buns', 'chicken')
+# what is this lol
+NO = tuple([
+    'thou may not take thy toothpick',
+    'no',
+] + [
+    f'u may not taste my delicious {x}' for x in [
+        'tomatoes', 'lettuce', 'ham', 'chicken', 'cheese',
+        'mayonaise', 'pickles', 'pumpernickel'
+    ]
+])
 
 #def read_list(b: bytes, chunk_size: int = 4) -> list[int]:
 #    if not (length := int.from_bytes(b[:2], 'little')):
@@ -39,26 +50,6 @@ TOPPINGS = ('tomatoes', 'lettuce', 'ham', 'buns', 'chicken')
 #
 #def multi_map(l, F, *Fs) -> Any:
 #    return map((l, F, *Fs) if Fs else (l, F))
-
-"""
-def whitelisted(m):
-    whitelist = {config.owner_id} # owner
-
-    @wraps(m)
-    async def wrapper(self, ctx: commands.Context):
-        if ctx.author.id in whitelist:
-            await m(self, ctx)
-
-    def add_wl(member: discord.Member):
-        whitelist.add(member.id)
-
-    def remove_wl(member: discord.Member):
-        whitelist.remove(member.id)
-
-    wrapper.add_wl = add_wl
-    wrapper.remove_wl = remove_wl
-    return wrapper
-"""
 
 class Context(commands.Context):
     async def send(self, content = None, new = False, **kwargs) -> Optional[discord.Message]:
@@ -95,6 +86,11 @@ class Commands(commands.Cog):
 
         self.namespace = {'save': _save, 'saved': _saved}
 
+        # add commonly used modules to namespace
+        for mod in ('asyncio', 'os', 'sys', 'struct',
+                    'discord', 'cmyui'):
+            self.namespace[mod] = __import__(mod)
+
     @commands.is_owner()
     @commands.command()
     async def addwl(self, ctx: Context):
@@ -110,9 +106,7 @@ class Commands(commands.Cog):
     @commands.command()
     async def cpp(self, ctx: Context) -> None:
         if ctx.author.id not in self.whitelist:
-            topping = random.choice(TOPPINGS)
-            await ctx.send(f'u may not taste my delicious {topping}')
-            return
+            return await ctx.send(random.choice(NO))
 
         content = ctx.message.content
         cmd = '{prefix}{invoked_with}'.format(**ctx.__dict__)
@@ -121,25 +115,21 @@ class Commands(commands.Cog):
             await ctx.send('owo')
             return
 
-        f_text = '\n'.join((
-            '#include <iostream>',
-            'int main() {',
-            f'std::cout << {content.removeprefix(cmd)[1:]} << std::endl;',
-            'return 0;',
-            '}'
-        ))
+        cpp_text = content.removeprefix(cmd)[1:]
 
         # create file with the code
         cpp_file = Path.cwd() / '_temp.cpp'
         bin_file = Path.cwd() / '_temp.o'
-        cpp_file.write_text(f_text)
+        cpp_file.write_text(cpp_text)
 
         PIPE = asyncio.subprocess.PIPE
         #DEVNULL = asyncio.subprocess.DEVNULL
 
         # run gcc compiler in subproc on it
+        # TODO: this doesn't work on uvloop? lol
         proc = await asyncio.subprocess.create_subprocess_exec(
-            'g++', '_temp.cpp', '-o', '_temp.o',  '-Wall', '-std=c++17',
+            'g++', '_temp.cpp', '-std=c++17',
+            '-o', '_temp.o', '-Wall',
             stdout=PIPE, stderr=PIPE
         )
 
@@ -178,9 +168,7 @@ class Commands(commands.Cog):
     @commands.command()
     async def py(self, ctx: Context) -> None:
         if ctx.author.id not in self.whitelist:
-            topping = random.choice(TOPPINGS)
-            await ctx.send(f'u may not taste my delicious {topping}')
-            return
+            return await ctx.send(random.choice(NO))
 
         content = ctx.message.content
         cmd = '{prefix}{invoked_with}'.format(**ctx.__dict__)
@@ -224,6 +212,13 @@ class Commands(commands.Cog):
                 self.namespace |= {ret.name: ret.value}
                 await ctx.send(f'Added `{ret.name}` to namespace.')
         else:
+            #for part in map(''.join, zip_longest(*[iter(str(ret))]*2000, fillvalue='')):
+            #    await ctx.send(part, new=True)
+
+            ret = str(ret)
+            if len(ret) > 2000:
+                ret = f'{ret[:1997]}...'
+
             await ctx.send(ret)
 
     @commands.command()
@@ -288,54 +283,6 @@ class BotPP(commands.Bot):
     async def on_message_delete(self, msg: discord.Message) -> None:
         if msg := self.cache['resp'].pop(msg.id, None):
             await msg.delete()
-
-#    @commands.command()
-#    async def check(self, ctx: Context, member: discord.Member, action: str) -> None:
-#        if not (mentions := ctx.message.mentions):
-#            return await ctx.send('??')
-#
-#        for m in mentions:
-#            res = await self.bot.db.fetchall(
-#                'SELECT others, datetime '
-#                'FROM vc_activity '
-#                'WHERE user = %s',
-#                [m.id]
-#            )
-#
-#            if res:
-#                for row in res:
-#                    other_ids = read_list(row['others'], chunk_size=8)
-#                    other_members = [self.bot.get_user(x) for x in other_ids]
-#                    row['others'] = ', '.join(map(str, other_ids))
-#                    await ctx.send('**[{datetime}]** Others: {others}.'.format(**row), new=True)
-#            else:
-#                await ctx.send('Noen')
-
-#    async def on_voice_state_update(self, member: discord.Member,
-#                                    before: discord.VoiceState,
-#                                    after: discord.VoiceState) -> None:
-#        """Thought this might be some interesting data?"""
-#        if before.channel == after.channel:
-#            # only interested in channel movement.
-#            return
-#
-#        # may be joining, leaving, or switching channels.
-#        for (joining, channel) in ((False, before),
-#                                   (True, after)):
-#            if not channel:
-#                continue
-#
-#            other_ids = channel.voice_states.keys() - {member.id}
-#            others_bytes = write_list(other_ids, chunk_size=8)
-#
-#            await self.db.execute(
-#                "INSERT INTO vc_activity VALUES "
-#                "(NULL, %s, %s, NOW(), %s, %s)",
-#                [member.id, channel.id, joining, others_bytes]
-#            )
-#
-#            verb = 'joined' if joining else 'departed'
-#            log(f"{member} {verb} {before.channel}.", Ansi.LGREEN)
 
 if __name__ == '__main__':
     bot = BotPP(command_prefix='!', help_command=None)
