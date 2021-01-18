@@ -234,7 +234,7 @@ class BotPP(commands.Bot):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self.db: cmyui.AsyncSQLPool
+        #self.db: cmyui.AsyncSQLPool
         self.http_sess: aiohttp.ClientSession
 
         self.cache = {'resp': {}} # many kinds
@@ -243,8 +243,8 @@ class BotPP(commands.Bot):
 
     def run(self, token: str, *args, **kwargs) -> None:
         async def runner():
-            self.db = cmyui.AsyncSQLPool()
-            await self.db.connect(config.mysql)
+            #self.db = cmyui.AsyncSQLPool()
+            #await self.db.connect(config.mysql)
 
             self.http_sess = aiohttp.ClientSession(json_serialize=orjson.dumps)
 
@@ -252,7 +252,7 @@ class BotPP(commands.Bot):
                 await self.start(token, *args, **kwargs)
             except:
                 await self.http_sess.close()
-                await self.db.close()
+                #await self.db.close()
                 await self.close()
 
         loop = asyncio.get_event_loop()
