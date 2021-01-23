@@ -88,7 +88,7 @@ class Commands(commands.Cog):
 
         # add commonly used modules to namespace
         for mod in ('asyncio', 'os', 'sys', 'struct',
-                    'discord', 'cmyui', 'datetime'):
+                    'discord', 'cmyui', 'datetime', 'time'):
             self.namespace[mod] = __import__(mod)
 
     @commands.is_owner()
