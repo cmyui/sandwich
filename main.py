@@ -231,6 +231,11 @@ class Commands(commands.Cog):
     async def how(self, ctx: Context) -> None:
         await ctx.send('magic')
 
+    @commands.command()
+    async def nr(self, ctx: Context) -> None:
+        async for msg in ctx.history():
+            await msg.clear_reactions()
+
 class BotPP(commands.Bot):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
