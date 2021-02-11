@@ -77,7 +77,6 @@ class Commands(commands.Cog):
             343508538246561796, # cover
             347459855449325570, # flame
             455300278120480770, # cherry
-            287647242435821569, # FRAnch
         }
 
         # a dict for our global variables within the !py command.
