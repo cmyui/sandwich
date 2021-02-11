@@ -4,6 +4,7 @@
 import asyncio
 import aiohttp
 import random
+import sys
 import traceback
 from pathlib import Path
 from typing import Any
@@ -30,18 +31,30 @@ NO = tuple([
 ])
 
 class Context(commands.Context):
-    async def send(self, content = None, new = False, **kwargs) -> Optional[discord.Message]:
-        # `new` is an override to the cache
-        if not new and self.message.id in self.bot.cache['resp']:
-            msg = self.bot.cache['resp'][self.message.id]
-            content = content or msg.content
-            embed = kwargs.get('embed', None)
-            await msg.edit(content=content, embed=embed)
-        else:
-            msg = await super().send(content, **kwargs)
-            self.bot.cache['resp'][self.message.id] = msg
+    async def send(self, content = None, force_new = False,
+                   **kwargs) -> Optional[discord.Message]:
+        bot_msg: discord.Message
 
-        return msg
+        if force_new or self.message.id in self.bot.cache['resp']:
+            bot_msg = self.bot.cache['resp'][self.message.id]
+
+            embed = kwargs.get('embed', None)
+
+            # if no new content or embed provided, delete
+            # the cached bot message from chat & cache.
+            if not (embed or content):
+                await bot_msg.delete()
+                del self.bot.cache['resp'][self.message.id]
+                return
+
+            content = content or bot_msg.content
+
+            await bot_msg.edit(content=content, embed=embed)
+        else:
+            bot_msg = await super().send(content, **kwargs)
+            self.bot.cache['resp'][self.message.id] = bot_msg
+
+        return bot_msg
 
 # used for saving values in `Commands().namespace` from !py land
 SavedValue = namedtuple('SavedValue', ['name', 'value'])
@@ -64,6 +77,7 @@ class Commands(commands.Cog):
             343508538246561796, # cover
             347459855449325570, # flame
             455300278120480770, # cherry
+            287647242435821569, # FRAnch
         }
 
         # a dict for our global variables within the !py command.
@@ -82,13 +96,13 @@ class Commands(commands.Cog):
     @commands.command()
     async def addwl(self, ctx: Context):
         self.whitelist |= set(m.id for m in ctx.message.mentions)
-        await ctx.send('Yep')
+        await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
 
     @commands.is_owner()
     @commands.command()
     async def rmwl(self, ctx: Context):
         self.whitelist -= set(m.id for m in ctx.message.mentions)
-        await ctx.send('Yep')
+        await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
 
     @commands.command()
     async def cpp(self, ctx: Context) -> None:
@@ -127,7 +141,7 @@ class Commands(commands.Cog):
             # warning/errors
             await ctx.send(f'```cpp\n{stderr[:1987]}...```')
             #for part in range(0, len(stderr), 1990):
-            #    await ctx.send(f'```cpp\n{stderr[part:part+1990]}```', new=True)
+            #    await ctx.send(f'```cpp\n{stderr[part:part+1990]}```', force_new=True)
             if not bin_file.exists():
                 # compilation failed (errors).
                 return
@@ -186,12 +200,25 @@ class Commands(commands.Cog):
             __py = self.namespace['__py']
             ret = await __py(ctx)
         except:
-            await ctx.send(f'```py\n{traceback.format_exc()}```')
-            return
+            # !py failed to compile, or run.
+            # get the exception lines, and format them for output.
+            tb_lines = [l[:-1] for l in traceback.format_exception(
+                *sys.exc_info(), limit = None, chain = True
+            )[2:]]
 
-        await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
+            line_num = int(tb_lines.pop(0)[23:]) - 1 # err line num
+            err_line = tb_lines.pop(-1) # err msg
+            tb_msg = '\n'.join([l[4:] for l in tb_lines]) # dedent
+
+            await ctx.send(f'**{err_line}** @ L{line_num} ```py\n{tb_msg}```')
+            await ctx.message.add_reaction('\N{CROSS MARK}')
+            return
+        else:
+            # !py ran successfully.
+            await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
 
         if ret is None:
+            await ctx.send(None) # clear prev responses
             return
 
         # the return value may be from the !save command.
@@ -210,8 +237,9 @@ class Commands(commands.Cog):
 
     @commands.command()
     async def nukeself(self, ctx: Context):
-        await ctx.channel.purge(check=lambda m: m.author == self.bot.user, limit=1000)
-        await ctx.send('done')
+        is_bot = lambda m: m.author == self.bot.user
+        await ctx.channel.purge(check=is_bot, limit=1000)
+        await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
 
     @commands.command()
     async def how(self, ctx: Context) -> None:
