@@ -1,6 +1,8 @@
 #!/usr/bin/python3.9
 # -*- coding: utf-8 -*-
 
+"""my personal (messy) discord bot. made (and great) for functionality."""
+
 import asyncio
 import aiohttp
 import random
@@ -187,28 +189,28 @@ class Commands(commands.Cog):
         f_text = '\n'.join(s for s in f_text.split('\n') if s)
 
         # remove any discord embed skinning.
-        if f_text.startswith('py\n'):
-            f_text = f_text[3:]
-        elif f_text.startswith('python\n'):
-            f_text = f_text[7:]
+        for prefix in ('py', 'python'):
+            f_text = f_text.removeprefix(f'{prefix}\n')
 
-        f_def = f'async def __py(ctx):\n{f_text}'.replace('\n', '\n ')
+        f_text = f' {f_text}'.replace('\n', '\n ') # indent
+        f_def = f'async def __py(ctx):\n{f_text}'
 
         try:
-            exec(f_def, self.namespace) # def __py(ctx)
-            __py = self.namespace['__py']
-            ret = await __py(ctx)
+            exec(f_def, self.namespace)             # compile function
+            ret = await self.namespace['__py'](ctx) # await it's return
         except:
-            # !py failed to compile, or run.
-            # get the exception lines, and format them for output.
+            # !py failed to compile, or run, get the exception lines.
+            # [2:] to remove useless lines, [:-1] to remove newlines.
             tb_lines = [l[:-1] for l in traceback.format_exception(
                 *sys.exc_info(), limit = None, chain = True
             )[2:]]
 
+            # format the exception output for our (strange) use case.
             line_num = int(tb_lines.pop(0)[23:]) - 1 # err line num
             err_line = tb_lines.pop(-1) # err msg
             tb_msg = '\n'.join([l[4:] for l in tb_lines]) # dedent
 
+            # send back tb in discord chat.
             await ctx.send(f'**{err_line}** @ L{line_num} ```py\n{tb_msg}```')
             await ctx.message.add_reaction('\N{CROSS MARK}')
             return
@@ -217,7 +219,8 @@ class Commands(commands.Cog):
             await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
 
         if ret is None:
-            await ctx.send(None) # clear prev responses
+            # clear any previous responses
+            await ctx.send(None)
             return
 
         # the return value may be from the !save command.
