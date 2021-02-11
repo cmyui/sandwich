@@ -3,17 +3,17 @@
 
 import asyncio
 import aiohttp
-
-import orjson
-import cmyui
-from cmyui import log, Ansi
-import traceback
 import random
-from typing import Any, Optional
-from collections import namedtuple
+import traceback
 from pathlib import Path
+from typing import Any
+from typing import Optional
 
 import discord
+import orjson
+from cmyui import Ansi
+from cmyui import log
+from collections import namedtuple
 from discord.ext import commands
 
 import config
@@ -28,28 +28,6 @@ NO = tuple([
         'mayonaise', 'pickles', 'pumpernickel'
     ]
 ])
-
-#def read_list(b: bytes, chunk_size: int = 4) -> list[int]:
-#    if not (length := int.from_bytes(b[:2], 'little')):
-#        return []
-#
-#    l = []
-#    for i in range(length):
-#        l.append(int.from_bytes(b[i:i+chunk_size], 'little'))
-#
-#    return l
-#
-#def write_list(l: list[int], chunk_size: int = 4) -> bytes:
-#    if not l:
-#        return b'\x00\x00'
-#
-#    b = bytearray(len(l).to_bytes(2, 'little'))
-#    for i in l:
-#        b += i.to_bytes(chunk_size, 'little')
-#    return bytes(b)
-#
-#def multi_map(l, F, *Fs) -> Any:
-#    return map((l, F, *Fs) if Fs else (l, F))
 
 class Context(commands.Context):
     async def send(self, content = None, new = False, **kwargs) -> Optional[discord.Message]:
@@ -75,8 +53,12 @@ def _saved(g: dict[str, Any]) -> dict[str, Any]:
     return {k: g[k] for k in set(g) - {'__builtins__', '__py'}}
 
 class Commands(commands.Cog):
-    def __init__(self, bot: 'BotPP') -> None:
+    def __init__(self, bot: 'Sandwich') -> None:
         self.bot = bot
+
+        # some people allowed to use dangerous
+        # commands by default, this would be a
+        # security risk on a 'real' bot.
         self.whitelist = {
             285190493703503872, # cmyui
             343508538246561796, # cover
@@ -84,13 +66,17 @@ class Commands(commands.Cog):
             455300278120480770, # cherry
         }
 
+        # a dict for our global variables within the !py command.
+        # by default, this has functions to save vars, retrieve saved ones,
         self.namespace = {'save': _save, 'saved': _saved}
 
-        # add commonly used modules to namespace
-        for mod in ('asyncio', 'os', 'sys', 'struct',
-                    'discord', 'cmyui', 'datetime',
-                    'time', 'inspect', 'math'):
-            self.namespace[mod] = __import__(mod)
+        # and also contains frequently used modules for ease of access.
+        for mod_name in (
+            'asyncio', 'os', 'sys', 'struct',
+            'discord', 'cmyui', 'datetime',
+            'time', 'inspect', 'math'
+        ):
+            self.namespace[mod_name] = __import__(mod_name)
 
     @commands.is_owner()
     @commands.command()
@@ -106,6 +92,7 @@ class Commands(commands.Cog):
 
     @commands.command()
     async def cpp(self, ctx: Context) -> None:
+        """Compile message with gcc as c++17 & run it, returning stdout."""
         if ctx.author.id not in self.whitelist:
             return await ctx.send(random.choice(NO))
 
@@ -168,6 +155,7 @@ class Commands(commands.Cog):
 
     @commands.command()
     async def py(self, ctx: Context) -> None:
+        """Parse & execute message via python interpreter."""
         if ctx.author.id not in self.whitelist:
             return await ctx.send(random.choice(NO))
 
@@ -206,19 +194,17 @@ class Commands(commands.Cog):
         if ret is None:
             return
 
+        # the return value may be from the !save command.
         if isinstance(ret, SavedValue):
-            if ret.name in self.namespace:
-                await ctx.send(f'Would shadow `{ret.name}` - please delete it first!')
-            else:
-                self.namespace |= {ret.name: ret.value}
-                await ctx.send(f'Added `{ret.name}` to namespace.')
+            # NOTE: this will overwrite preexisting vars.
+            self.namespace |= {ret.name: ret.value}
+            await ctx.send(f'Added `{ret.name}` to namespace.')
         else:
-            #for part in map(''.join, zip_longest(*[iter(str(ret))]*2000, fillvalue='')):
-            #    await ctx.send(part, new=True)
-
             ret = str(ret)
+
+            # discord content len limited to 2k chars.
             if len(ret) > 2000:
-                ret = f'{ret[:1997]}...'
+                ret = f'{ret[:1989]}... (trunc)'
 
             await ctx.send(ret)
 
@@ -236,7 +222,7 @@ class Commands(commands.Cog):
         async for msg in ctx.history():
             await msg.clear_reactions()
 
-class BotPP(commands.Bot):
+class Sandwich(commands.Bot):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
@@ -291,5 +277,5 @@ class BotPP(commands.Bot):
             await msg.delete()
 
 if __name__ == '__main__':
-    bot = BotPP(command_prefix='!', help_command=None)
+    bot = Sandwich(command_prefix='!', help_command=None)
     bot.run(config.discord_token)
