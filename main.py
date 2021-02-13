@@ -199,12 +199,14 @@ class Commands(commands.Cog):
             exec(f_def, self.namespace)             # compile function
             ret = await self.namespace['__py'](ctx) # await it's return
         except:
+            """
             # !py failed to compile, or run, get the exception lines.
             # [2:] to remove useless lines, [:-1] to remove newlines.
             tb_lines = [l[:-1] for l in traceback.format_exception(
                 *sys.exc_info(), limit = None, chain = True
             )[2:]]
 
+            '  File "<string>", line 8, in __py'
             # format the exception output for our (strange) use case.
             line_num = int(tb_lines.pop(0)[23:]) - 1 # err line num
             err_line = tb_lines.pop(-1) # err msg
@@ -212,6 +214,8 @@ class Commands(commands.Cog):
 
             # send back tb in discord chat.
             await ctx.send(f'**{err_line}** @ L{line_num} ```py\n{tb_msg}```')
+            """
+            await ctx.send(f'```{traceback.format_exc()}```')
             await ctx.message.add_reaction('\N{CROSS MARK}')
             return
         else:
