@@ -89,7 +89,8 @@ class Commands(commands.Cog):
         for mod_name in (
             'asyncio', 'os', 'sys', 'struct',
             'discord', 'cmyui', 'datetime',
-            'time', 'inspect', 'math'
+            'time', 'inspect', 'math',
+            'pickle', 'dill'
         ):
             self.namespace[mod_name] = __import__(mod_name)
 
