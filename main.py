@@ -4,19 +4,20 @@
 """my personal (messy) discord bot. made (and great) for functionality."""
 
 import asyncio
-import aiohttp
 import random
-import sys
+from collections import namedtuple
 import traceback
+from typing import Optional
 from pathlib import Path
 from typing import Any
-from typing import Optional
+
+import aiohttp
+import cmyui
 
 import discord
 import orjson
 from cmyui import Ansi
 from cmyui import log
-from collections import namedtuple
 from discord.ext import commands
 
 import config
@@ -25,6 +26,7 @@ import config
 NO = tuple([
     'thou may not take thy toothpick',
     'no',
+    'yo m',
 ] + [
     f'u may not taste my delicious {x}' for x in [
         'tomatoes', 'lettuce', 'ham', 'chicken', 'cheese',
@@ -261,7 +263,7 @@ class Sandwich(commands.Bot):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        #self.db: cmyui.AsyncSQLPool
+        self.db: cmyui.AsyncSQLPool
         self.http_sess: aiohttp.ClientSession
 
         self.cache = {'resp': {}} # many kinds
@@ -270,8 +272,8 @@ class Sandwich(commands.Bot):
 
     def run(self, token: str, *args, **kwargs) -> None:
         async def runner():
-            #self.db = cmyui.AsyncSQLPool()
-            #await self.db.connect(config.mysql)
+            self.db = cmyui.AsyncSQLPool()
+            await self.db.connect(config.mysql)
 
             self.http_sess = aiohttp.ClientSession(json_serialize=orjson.dumps)
 
@@ -279,7 +281,7 @@ class Sandwich(commands.Bot):
                 await self.start(token, *args, **kwargs)
             except:
                 await self.http_sess.close()
-                #await self.db.close()
+                await self.db.close()
                 await self.close()
 
         loop = asyncio.get_event_loop()
