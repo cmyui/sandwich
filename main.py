@@ -313,6 +313,11 @@ class Sandwich(commands.Bot):
         if msg := self.cache['resp'].pop(msg.id, None):
             await msg.delete()
 
+    async def on_command_error(self, ctx: Context,
+                               error: commands.CommandError) -> None:
+        if not isinstance(error, commands.errors.CommandNotFound): # ignore unknown cmds
+            return super().on_command_error(ctx, error)
+
 if __name__ == '__main__':
     bot = Sandwich(command_prefix='!', help_command=None)
     bot.run(config.discord_token)
