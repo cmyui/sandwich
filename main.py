@@ -251,19 +251,27 @@ class Commands(commands.Cog):
 
     @commands.command()
     async def gitlines(self, ctx: Context):
-        # !gitlines <repo> <file_ext> <comment_char>
-        # !gitlines cmyui/gulag py #
-
+        """Retrieve the linecounts (code, comments) for a given repo & lang."""
+        # NOTE: this is quite inaccurate, as doing this correctly
+        # would basically require parsing the code for each lang lol.
+        # it's just made to get the general idea of the size/ratio.
         if len(msg := ctx.message.content.split(' ')[1:]) < 2:
             await ctx.send('Invalid syntax: !gitlines <repo> <file extensions ...>')
             return
 
         repo, *exts = msg
-        repo_url = f'https://github.com/{repo}/archive/master.zip'
+
+        # repo may contain branch
+        if repo.count('/') == 2:
+            repo, branch = repo.rsplit('/', maxsplit=1)
+        else:
+            branch = 'master'
+
+        repo_url = f'https://github.com/{repo}/archive/{branch}.zip'
 
         async with self.bot.http_sess.get(repo_url) as resp:
             if resp.status != 200:
-                await ctx.send(f'Failed to find repo "{repo}" ({resp.status}).')
+                await ctx.send(f'Failed to find repo "{repo}/{branch}" ({resp.status}).')
                 return
 
             if resp.content_type != 'application/zip':
@@ -412,7 +420,7 @@ class Sandwich(commands.Bot):
         if msg := self.cache['resp'].pop(msg.id, None):
             await msg.delete()
 
-    def on_command_error(self, ctx: Context,
+    async def on_command_error(self, ctx: Context,
                                error: commands.CommandError) -> None:
         if not isinstance(error, commands.errors.CommandNotFound): # ignore unknown cmds
             return super().on_command_error(ctx, error)
