@@ -4,16 +4,18 @@
 """my personal (messy) discord bot. made (and great) for functionality."""
 
 import asyncio
+import io
+import os
 import random
-from collections import namedtuple
 import traceback
-from typing import Optional
+import zipfile
+from collections import namedtuple
 from pathlib import Path
+from typing import Optional
 from typing import Any
 
 import aiohttp
 import cmyui
-
 import discord
 import orjson
 from cmyui import Ansi
@@ -21,6 +23,11 @@ from cmyui import log
 from discord.ext import commands
 
 import config
+
+CMYUI_ID = 285190493703503872
+COVER_ID = 343508538246561796
+FLAME_ID = 347459855449325570
+CHERRY_ID = 455300278120480770
 
 # what is this lol
 NO = tuple([
@@ -77,10 +84,8 @@ class Commands(commands.Cog):
         # commands by default, this would be a
         # security risk on a 'real' bot.
         self.whitelist = {
-            285190493703503872, # cmyui
-            343508538246561796, # cover
-            347459855449325570, # flame
-            455300278120480770, # cherry
+            CMYUI_ID, COVER_ID,
+            FLAME_ID, CHERRY_ID
         }
 
         # a dict for our global variables within the !py command.
@@ -245,6 +250,100 @@ class Commands(commands.Cog):
             await ctx.send(ret)
 
     @commands.command()
+    async def gitlines(self, ctx: Context):
+        # !gitlines <repo> <file_ext> <comment_char>
+        # !gitlines cmyui/gulag py #
+
+        if len(msg := ctx.message.content.split(' ')[1:]) < 2:
+            await ctx.send('Invalid syntax: !gitlines <repo> <file extensions ...>')
+            return
+
+        repo, *exts = msg
+        repo_url = f'https://github.com/{repo}/archive/master.zip'
+
+        async with self.bot.http_sess.get(repo_url) as resp:
+            if resp.status != 200:
+                await ctx.send(f'Failed to find repo "{repo}" ({resp.status}).')
+                return
+
+            if resp.content_type != 'application/zip':
+                await ctx.send(f'Invalid response (CT: {resp.content_type}).')
+                return
+
+            size_MB = resp.content.total_bytes // (1024 ** 3)
+
+            if size_MB >= 2:
+                await ctx.send(f'Repo too big ({size_MB:,.2f}MB).')
+                return
+
+            resp_content = await resp.read()
+
+        # TODO: better multi-line support
+        lang_comments = {
+            'py': {'single': '#', 'multi': ('"""', "'''")}, # wrong but okay for now
+            #'go': {'single': '//', 'multi': ()},
+            #'js': {'single': '//', 'multi': ()},
+            #'ts': {'single': '//', 'multi': ()},
+        }
+
+        with io.BytesIO(resp_content) as data:
+            try:
+                repo_zip = zipfile.ZipFile(data)
+            except Exception as e:
+                print(e)
+                return
+
+            line_counts = {ext: {'code': 0, 'comments': 0} for ext in exts}
+
+            for file in repo_zip.filelist:
+                for ext in exts:
+                    if (fname := file.filename).endswith(ext):
+                        break
+                else: # not an ext we care abt
+                    continue
+
+                if ext not in lang_comments:
+                    await ctx.send(f'*.{ext} not yet supported.')
+                    return
+
+                if not (f_content := repo_zip.read(file)):
+                    print(f'Empty file? {fname}')
+                    continue
+
+                comments = lang_comments[ext]
+                single_line_comment = comments['single']
+                multi_line_comment = comments['multi']
+
+                code_lines = comment_lines = 0
+                in_multi_line_comment = False
+
+                lines = f_content.decode().splitlines()
+
+                # TODO: more languages supported & multi-line comments
+                for line in [l.strip() for l in lines if l]:
+                    if line.startswith(multi_line_comment):
+                        in_multi_line_comment = not in_multi_line_comment
+
+                    if in_multi_line_comment:
+                        comment_lines += 1
+                        if ( # end of multi line comment
+                            len(line) != 3 and
+                            line.endswith(multi_line_comment)
+                        ):
+                            in_multi_line_comment = False
+                        continue
+
+                    if line.startswith(single_line_comment):
+                        comment_lines += 1
+                    else:
+                        code_lines += 1
+
+                line_counts[ext]['code'] += code_lines
+                line_counts[ext]['comments'] += comment_lines
+
+        await ctx.send('Total linecounts (inaccurate):\n' + '\n'.join(f'{k} | {v}' for k, v in line_counts.items()))
+
+    @commands.command()
     async def nukeself(self, ctx: Context):
         is_bot = lambda m: m.author == self.bot.user
         await ctx.channel.purge(check=is_bot, limit=1000)
@@ -313,11 +412,12 @@ class Sandwich(commands.Bot):
         if msg := self.cache['resp'].pop(msg.id, None):
             await msg.delete()
 
-    async def on_command_error(self, ctx: Context,
+    def on_command_error(self, ctx: Context,
                                error: commands.CommandError) -> None:
         if not isinstance(error, commands.errors.CommandNotFound): # ignore unknown cmds
             return super().on_command_error(ctx, error)
 
 if __name__ == '__main__':
+    os.chdir(os.path.dirname(os.path.realpath(__file__)))
     bot = Sandwich(command_prefix='!', help_command=None)
     bot.run(config.discord_token)
