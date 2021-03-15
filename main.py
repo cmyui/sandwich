@@ -96,8 +96,9 @@ class Commands(commands.Cog):
         for mod_name in (
             'asyncio', 'os', 'sys', 'struct',
             'discord', 'cmyui', 'datetime',
-            'time', 'inspect', 'math',
-            'pickle', 'dill'
+            'time', 'inspect', 'math', 'psuil',
+            'pickle', 'dill', 'signal', 'numpy',
+            'random'
         ):
             self.namespace[mod_name] = __import__(mod_name)
 
@@ -259,7 +260,19 @@ class Commands(commands.Cog):
             await ctx.send('Invalid syntax: !gitlines <repo> <file extensions ...>')
             return
 
+        # TODO: better multi-line support
+        lang_comments = {
+            'py': {'single': '#', 'multi': ('"""', "'''")}, # wrong but okay for now
+            #'go': {'single': '//', 'multi': ()},
+            #'js': {'single': '//', 'multi': ()},
+            #'ts': {'single': '//', 'multi': ()},
+        }
+
         repo, *exts = msg
+
+        if not all([ext in lang_comments for ext in exts]):
+            await ctx.send(f'supported exts: {set(lang_comments)}.')
+            return
 
         # repo may contain branch
         if repo.count('/') == 2:
@@ -285,14 +298,6 @@ class Commands(commands.Cog):
                 return
 
             resp_content = await resp.read()
-
-        # TODO: better multi-line support
-        lang_comments = {
-            'py': {'single': '#', 'multi': ('"""', "'''")}, # wrong but okay for now
-            #'go': {'single': '//', 'multi': ()},
-            #'js': {'single': '//', 'multi': ()},
-            #'ts': {'single': '//', 'multi': ()},
-        }
 
         with io.BytesIO(resp_content) as data:
             try:
@@ -349,7 +354,9 @@ class Commands(commands.Cog):
                 line_counts[ext]['code'] += code_lines
                 line_counts[ext]['comments'] += comment_lines
 
-        await ctx.send('Total linecounts (inaccurate):\n' + '\n'.join(f'{k} | {v}' for k, v in line_counts.items()))
+        await ctx.send('Total linecounts (inaccurate):\n' + '\n'.join(
+            f'{k} | {v}' for k, v in line_counts.items()
+        ))
 
     @commands.command()
     async def nukeself(self, ctx: Context):
