@@ -96,7 +96,7 @@ class Commands(commands.Cog):
         for mod_name in (
             'asyncio', 'os', 'sys', 'struct',
             'discord', 'cmyui', 'datetime',
-            'time', 'inspect', 'math', 'psuil',
+            'time', 'inspect', 'math', 'psutil',
             'pickle', 'dill', 'signal', 'numpy',
             'random'
         ):
