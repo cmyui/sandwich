@@ -47,9 +47,13 @@ class Context(commands.Context):
                    **kwargs) -> Optional[discord.Message]:
         bot_msg: discord.Message
 
-        if force_new or self.message.id in self.bot.cache['resp']:
-            bot_msg = self.bot.cache['resp'][self.message.id]
+        if force_new or self.message.id not in self.bot.cache['resp']:
+            bot_msg = await super().send(content, **kwargs)
 
+            if not force_new: # don't save forced msgs
+                self.bot.cache['resp'][self.message.id] = bot_msg
+        else:
+            bot_msg = self.bot.cache['resp'][self.message.id]
             embed = kwargs.get('embed', None)
 
             # if no new content or embed provided, delete
@@ -60,11 +64,7 @@ class Context(commands.Context):
                 return
 
             content = content or bot_msg.content
-
             await bot_msg.edit(content=content, embed=embed)
-        else:
-            bot_msg = await super().send(content, **kwargs)
-            self.bot.cache['resp'][self.message.id] = bot_msg
 
         return bot_msg
 
@@ -99,7 +99,7 @@ class Commands(commands.Cog):
             'discord', 'cmyui', 'datetime',
             'time', 'inspect', 'math', 'psutil',
             'pickle', 'dill', 'signal', 'numpy',
-            'random'
+            'random', 'pprint'
         ):
             self.namespace[mod_name] = __import__(mod_name)
 
