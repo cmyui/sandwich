@@ -6,6 +6,7 @@
 import asyncio
 import io
 import os
+import pprint
 import random
 import traceback
 import zipfile
@@ -242,7 +243,7 @@ class Commands(commands.Cog):
             self.namespace |= {ret.name: ret.value}
             await ctx.send(f'Added `{ret.name}` to namespace.')
         else:
-            ret = str(ret)
+            ret = pprint.pformat(ret)
 
             # discord content len limited to 2k chars.
             if len(ret) > 2000:
