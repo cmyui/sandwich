@@ -35,11 +35,14 @@ NO = tuple([
     'thou may not take thy toothpick',
     'no',
     'yo m',
+    'mask off',
 ] + [
     f'u may not taste my delicious {x}' for x in [
         'tomatoes', 'lettuce', 'ham', 'chicken', 'cheese',
         'mayonaise', 'pickles', 'pumpernickel'
     ]
+] + [
+
 ])
 
 class Context(commands.Context):
@@ -243,7 +246,12 @@ class Commands(commands.Cog):
             self.namespace |= {ret.name: ret.value}
             await ctx.send(f'Added `{ret.name}` to namespace.')
         else:
-            ret = pprint.pformat(ret)
+            if len(ret) > 10000:
+                await ctx.send('Response way too long.')
+                return
+
+            if not isinstance(ret, str):
+                ret = pprint.pformat(ret)
 
             # discord content len limited to 2k chars.
             if len(ret) > 2000:
