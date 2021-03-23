@@ -8,6 +8,8 @@ import io
 import os
 import pprint
 import random
+import re
+import sys
 import traceback
 import zipfile
 from collections import namedtuple
@@ -122,7 +124,8 @@ class Commands(commands.Cog):
     async def cpp(self, ctx: Context) -> None:
         """Compile message with gcc as c++17 & run it, returning stdout."""
         if ctx.author.id not in self.whitelist:
-            return await ctx.send(random.choice(NO))
+            await ctx.send(random.choice(NO))
+            return
 
         content = ctx.message.content
         cmd = '{prefix}{invoked_with}'.format(**ctx.__dict__)
@@ -185,7 +188,8 @@ class Commands(commands.Cog):
     async def py(self, ctx: Context) -> None:
         """Parse & execute message via python interpreter."""
         if ctx.author.id not in self.whitelist:
-            return await ctx.send(random.choice(NO))
+            await ctx.send(random.choice(NO))
+            return
 
         content = ctx.message.content
         cmd = '{prefix}{invoked_with}'.format(**ctx.__dict__)
@@ -246,18 +250,34 @@ class Commands(commands.Cog):
             self.namespace |= {ret.name: ret.value}
             await ctx.send(f'Added `{ret.name}` to namespace.')
         else:
-            if len(ret) > 10000:
-                await ctx.send('Response way too long.')
-                return
+            truncated = False
 
             if not isinstance(ret, str):
-                ret = pprint.pformat(ret)
+                # XXX: perhaps i could truncate here as well?
+                # i'll see how it's use goes in practice
+                oversize = sys.getsizeof(ret) - (3 * 1024) # 3KB
+                if oversize > 0:
+                    await ctx.send(f'Response {oversize}B too large (max 3KB).')
+                    return
 
-            # discord content len limited to 2k chars.
-            if len(ret) > 2000:
-                ret = f'{ret[:1989]}... (trunc)'
+                ret = pprint.pformat(ret)
+            else:
+                if len(ret) > 10000:
+                    await ctx.send('Response way too long.')
+                    return
+
+                # discord content len limited to 2k chars.
+                if len(ret) > 2000:
+                    ret = ret[:2000]
+                    truncated = True
 
             await ctx.send(ret)
+
+            if truncated:
+                await ctx.send(
+                    '(Message truncated to 2k characters)',
+                    force_new=True, delete_after=3.5
+                )
 
     @commands.command()
     async def gitlines(self, ctx: Context):
