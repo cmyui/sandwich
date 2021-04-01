@@ -14,8 +14,9 @@ import traceback
 import zipfile
 from collections import namedtuple
 from pathlib import Path
-from typing import Optional
 from typing import Any
+from typing import Optional
+from typing import Union
 
 import aiohttp
 import cmyui
@@ -46,6 +47,27 @@ NO = tuple([
 ] + [
 
 ])
+
+ORDER_SUFFIXES = ['K', 'M', 'B', 'T', 'Q']
+def magnitude_fmt(n: float) -> float:
+    for suffix in ORDER_SUFFIXES:
+        n /= 1000
+        if n < 1000:
+            return f'{n:,.3f}{suffix}'
+    else:
+        # what? we need quintillions? lol
+        breakpoint()
+
+# TODO: let user pass in how many years to calc avg from?
+AVG_SP500_50Y_RETURN = 10.9 / 100
+def sp500_returns(principal: Union[int, float], years: int) -> str:
+    A = principal * (1 + (AVG_SP500_50Y_RETURN / 1)) ** (1 * years)
+
+    if A > 1_000_000_000_000_000:
+        return 'Too lazy to support >= 1 quadrillion.'
+
+    return (f'Estimated value after {years}yrs: ${A:,.2f} ({magnitude_fmt(A)}) ⛹️‍♂️\n'
+            'https://investor.vanguard.com/etf/profile/VOO')
 
 class Context(commands.Context):
     async def send(self, content = None, force_new = False,
@@ -96,7 +118,8 @@ class Commands(commands.Cog):
 
         # a dict for our global variables within the !py command.
         # by default, this has functions to save vars, retrieve saved ones,
-        self.namespace = {'save': _save, 'saved': _saved}
+        self.namespace = {'save': _save, 'saved': _saved,
+                          'sp500_returns': sp500_returns}
 
         # and also contains frequently used modules for ease of access.
         for mod_name in (
@@ -266,10 +289,10 @@ class Commands(commands.Cog):
                     await ctx.send('Response way too long.')
                     return
 
-                # discord content len limited to 2k chars.
-                if len(ret) > 2000:
-                    ret = ret[:2000]
-                    truncated = True
+            # discord content len limited to 2k chars.
+            if len(ret) > 2000:
+                ret = ret[:2000]
+                truncated = True
 
             await ctx.send(ret)
 
