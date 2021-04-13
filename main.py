@@ -127,7 +127,7 @@ class Commands(commands.Cog):
             'discord', 'cmyui', 'datetime',
             'time', 'inspect', 'math', 'psutil',
             'pickle', 'dill', 'signal', 'numpy',
-            'random', 'pprint'
+            'random', 'pprint', 'pathlib'
         ):
             self.namespace[mod_name] = __import__(mod_name)
 
