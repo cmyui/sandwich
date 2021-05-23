@@ -129,7 +129,10 @@ class Commands(commands.Cog):
             'pickle', 'dill', 'signal', 'numpy',
             'random', 'pprint', 'pathlib', 'hashlib'
         ):
-            self.namespace[mod_name] = __import__(mod_name)
+            try: # only use ones that're already installed
+                self.namespace[mod_name] = __import__(mod_name)
+            except ModuleNotFoundError:
+                pass
 
     @commands.is_owner()
     @commands.command()
@@ -450,7 +453,7 @@ class Sandwich(commands.Bot):
                 await self.db.close()
                 await self.close()
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
         loop.create_task(runner())
 
         try:

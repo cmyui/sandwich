@@ -1,0 +1,5 @@
+aiohttp
+cmyui
+discord
+psutil
+dill
