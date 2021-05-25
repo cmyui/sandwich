@@ -130,10 +130,10 @@ class Commands(commands.Cog):
                           'sp500_returns': sp500_returns}
         # and also contains frequently used modules for ease of access.
         for mod_name in (
-            'aiohttp', 'asyncio', 'os', 'sys', 'struct',
-            'discord', 'cmyui', 'datetime', 'collections',
-            'time', 'inspect', 'math', 'psutil', 're',
-            'pickle', 'dill', 'signal', 'numpy',
+            'aiohttp', 'ast', 'astpretty', 'asyncio', 'os',
+            'sys', 'struct', 'discord', 'cmyui', 'datetime',
+            'collections', 'time', 'inspect', 'math', 'psutil',
+            're', 'pickle', 'dill', 'signal', 'numpy',
             'random', 'pprint', 'pathlib', 'hashlib'
         ):
             try: # only use ones that're already installed
