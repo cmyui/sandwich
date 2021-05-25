@@ -9,6 +9,7 @@ import os
 import pprint
 import random
 import shlex
+import subprocess
 import sys
 import traceback
 import zipfile
@@ -227,13 +228,14 @@ class Commands(commands.Cog):
         cmd = '{prefix}{invoked_with}'.format(**ctx.__dict__)
         cmd_txt = ctx.message.content.removeprefix(cmd)
 
-        p = await asyncio.create_subprocess_exec(
-            *shlex.split('python3.9 -m timeit' + cmd_txt),
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+        # NOTE: to get accurate results here we have to block
+        p = subprocess.Popen(
+            args=shlex.split('python3.9 -m timeit' + cmd_txt),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
         )
 
-        stdout, stderr = await p.communicate()
+        stdout, stderr = p.communicate()
 
         await ctx.send((stderr or stdout).decode())
 
