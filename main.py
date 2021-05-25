@@ -8,7 +8,6 @@ import io
 import os
 import pprint
 import random
-import re
 import sys
 import traceback
 import zipfile
@@ -122,9 +121,9 @@ class Commands(commands.Cog):
                           'sp500_returns': sp500_returns}
         # and also contains frequently used modules for ease of access.
         for mod_name in (
-            'asyncio', 'os', 'sys', 'struct',
-            'discord', 'cmyui', 'datetime',
-            'time', 'inspect', 'math', 'psutil',
+            'aiohttp', 'asyncio', 'os', 'sys', 'struct',
+            'discord', 'cmyui', 'datetime', 'collections',
+            'time', 'inspect', 'math', 'psutil', 're',
             'pickle', 'dill', 'signal', 'numpy',
             'random', 'pprint', 'pathlib', 'hashlib'
         ):
