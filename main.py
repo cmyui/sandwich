@@ -135,7 +135,7 @@ class Commands(commands.Cog):
             'sys', 'struct', 'discord', 'cmyui', 'datetime',
             'collections', 'time', 'inspect', 'math', 'psutil',
             're', 'pickle', 'dill', 'signal', 'numpy',
-            'random', 'pprint', 'pathlib', 'hashlib'
+            'random', 'pprint', 'pathlib', 'hashlib', 'platform'
         ):
             try: # only use ones that're already installed
                 self.namespace[mod_name] = __import__(mod_name)
