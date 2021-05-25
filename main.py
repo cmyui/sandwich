@@ -230,7 +230,7 @@ class Commands(commands.Cog):
 
         # NOTE: to get accurate results here we have to block
         p = subprocess.Popen(
-            args=shlex.split('python3.9 -m timeit' + cmd_txt),
+            args=shlex.split('python3.10 -m timeit' + cmd_txt),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
