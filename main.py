@@ -120,7 +120,6 @@ class Commands(commands.Cog):
         # by default, this has functions to save vars, retrieve saved ones,
         self.namespace = {'save': _save, 'saved': _saved,
                           'sp500_returns': sp500_returns}
-
         # and also contains frequently used modules for ease of access.
         for mod_name in (
             'asyncio', 'os', 'sys', 'struct',
@@ -453,7 +452,7 @@ class Sandwich(commands.Bot):
                 await self.db.close()
                 await self.close()
 
-        loop = asyncio.new_event_loop()
+        loop = asyncio.get_event_loop()
         loop.create_task(runner())
 
         try:
