@@ -8,12 +8,12 @@ import io
 import os
 import pprint
 import random
+import shlex
 import sys
 import traceback
 import zipfile
 from collections import namedtuple
 from pathlib import Path
-from typing import Any
 from typing import Optional
 from typing import Union
 
@@ -31,6 +31,7 @@ CMYUI_ID = 285190493703503872
 COVER_ID = 343508538246561796
 FLAME_ID = 347459855449325570
 CHERRY_ID = 455300278120480770
+REALISTIK_ID = 263413454709194753
 
 # what is this lol
 NO = tuple([
@@ -97,10 +98,10 @@ class Context(commands.Context):
 # used for saving values in `Commands().namespace` from !py land
 SavedValue = namedtuple('SavedValue', ['name', 'value'])
 
-def _save(k: str, v: Any) -> SavedValue:
+def _save(k: str, v: object) -> SavedValue:
     return SavedValue(k, v)
 
-def _saved(g: dict[str, Any]) -> dict[str, Any]:
+def _saved(g: dict[str, object]) -> dict[str, object]:
     return {k: g[k] for k in set(g) - {'__builtins__', '__py'}}
 
 class Commands(commands.Cog):
@@ -110,10 +111,18 @@ class Commands(commands.Cog):
         # some people allowed to use dangerous
         # commands by default, this would be a
         # security risk on a 'real' bot.
-        self.whitelist = {
-            CMYUI_ID, COVER_ID,
-            FLAME_ID, CHERRY_ID
-        }
+        uname = os.uname()
+
+        self.whitelist = {CMYUI_ID}
+
+        if not (
+            uname.nodename == 'cmyui' or
+            'microsoft-standard-WSL' in uname.release
+        ):
+            self.whitelist |= {
+                COVER_ID, FLAME_ID,
+                CHERRY_ID, REALISTIK_ID
+            }
 
         # a dict for our global variables within the !py command.
         # by default, this has functions to save vars, retrieve saved ones,
@@ -135,13 +144,13 @@ class Commands(commands.Cog):
     @commands.is_owner()
     @commands.command()
     async def addwl(self, ctx: Context):
-        self.whitelist |= set(m.id for m in ctx.message.mentions)
+        self.whitelist |= set([m.id for m in ctx.message.mentions])
         await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
 
     @commands.is_owner()
     @commands.command()
     async def rmwl(self, ctx: Context):
-        self.whitelist -= set(m.id for m in ctx.message.mentions)
+        self.whitelist -= set([m.id for m in ctx.message.mentions])
         await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
 
     @commands.command()
