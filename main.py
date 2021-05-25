@@ -218,6 +218,26 @@ class Commands(commands.Cog):
         await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
 
     @commands.command()
+    async def timeit(self, ctx: Context) -> None:
+        """Parse & execute message via python interpreter."""
+        if ctx.author.id not in self.whitelist:
+            await ctx.send(random.choice(NO))
+            return
+
+        cmd = '{prefix}{invoked_with}'.format(**ctx.__dict__)
+        cmd_txt = ctx.message.content.removeprefix(cmd)
+
+        p = await asyncio.create_subprocess_exec(
+            *shlex.split('python3.9 -m timeit' + cmd_txt),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+
+        stdout, stderr = await p.communicate()
+
+        await ctx.send((stderr or stdout).decode())
+
+    @commands.command()
     async def py(self, ctx: Context) -> None:
         """Parse & execute message via python interpreter."""
         if ctx.author.id not in self.whitelist:
