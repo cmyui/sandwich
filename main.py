@@ -512,7 +512,7 @@ class Sandwich(commands.Bot):
     async def on_command_error(self, ctx: Context,
                                error: commands.CommandError) -> None:
         if not isinstance(error, commands.errors.CommandNotFound): # ignore unknown cmds
-            return super().on_command_error(ctx, error)
+            return await super().on_command_error(ctx, error)
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
