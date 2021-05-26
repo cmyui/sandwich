@@ -4,8 +4,10 @@
 """my personal (messy) discord bot. made (and great) for functionality."""
 
 import asyncio
+import cpuinfo
 import io
 import os
+import platform
 import pprint
 import random
 import shlex
@@ -238,7 +240,21 @@ class Commands(commands.Cog):
 
         stdout, stderr = p.communicate()
 
-        await ctx.send((stderr or stdout).decode())
+        if stderr:
+            await ctx.send(f'```py\n{stderr.decode()}```')
+        elif stdout:
+            cpu_info_dict = cpuinfo.get_cpu_info()
+
+            cpu_name = cpu_info_dict['brand_raw']
+            if not cpu_name.endswith('GHz'):
+                cpu_name += f" @ {cpu_info_dict['hz_advertised_friendly']}"
+
+            await ctx.send('{cpu_name} | {python_impl} v{python_version}\n{output}'.format(
+                **cpu_info_dict,
+                cpu_name=cpu_name,
+                output=stdout.decode(),
+                python_impl=platform.python_implementation()
+            ))
 
     @commands.command()
     async def py(self, ctx: Context) -> None:
