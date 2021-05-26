@@ -243,14 +243,15 @@ class Commands(commands.Cog):
         if stderr:
             await ctx.send(f'```py\n{stderr.decode()}```')
         elif stdout:
-            cpu_info_dict = cpuinfo.get_cpu_info()
+            cpu_info = cpuinfo.get_cpu_info()
 
-            cpu_name = cpu_info_dict['brand_raw']
+            cpu_name = cpu_info['brand_raw']
             if not cpu_name.endswith('GHz'):
-                cpu_name += f" @ {cpu_info_dict['hz_advertised_friendly']}"
+                cpu_ghz = cpu_info['hz_advertised'][0] / (1000 ** 3)
+                cpu_name += f" @ {cpu_ghz:.2f} GHz"
 
             await ctx.send('{cpu_name} | {python_impl} v{python_version}\n{output}'.format(
-                **cpu_info_dict,
+                **cpu_info,
                 cpu_name=cpu_name,
                 output=stdout.decode(),
                 python_impl=platform.python_implementation()
