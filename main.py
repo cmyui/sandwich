@@ -228,11 +228,11 @@ class Commands(commands.Cog):
             await ctx.send(random.choice(NO))
             return
 
-        cmd = '{prefix}{invoked_with}'.format(**ctx.__dict__)
-        cmd_txt = ctx.message.content.removeprefix(cmd)
+        invoked_with = '{prefix}{invoked_with} '.format(**ctx.__dict__)
+        cmd_txt = ctx.message.content.removeprefix(invoked_with)
 
         try:
-            bash_args = shlex.split('python3.10 -m timeit' + cmd_txt)
+            bash_args = shlex.split(f'{sys.executable} -m timeit {cmd_txt}')
         except ValueError as exc:
             await ctx.send(f'{exc.args[0]}.')
             return
