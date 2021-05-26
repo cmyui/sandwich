@@ -231,9 +231,15 @@ class Commands(commands.Cog):
         cmd = '{prefix}{invoked_with}'.format(**ctx.__dict__)
         cmd_txt = ctx.message.content.removeprefix(cmd)
 
+        try:
+            bash_args = shlex.split('python3.10 -m timeit' + cmd_txt)
+        except ValueError as exc:
+            await ctx.send(f'{exc.args[0]}.')
+            return
+
         # NOTE: to get accurate results here we have to block
         p = subprocess.Popen(
-            args=shlex.split('python3.10 -m timeit' + cmd_txt),
+            args=bash_args,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
