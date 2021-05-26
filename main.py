@@ -158,72 +158,8 @@ class Commands(commands.Cog):
         await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
 
     @commands.command()
-    async def cpp(self, ctx: Context) -> None:
-        """Compile message with gcc as c++17 & run it, returning stdout."""
-        if ctx.author.id not in self.whitelist:
-            await ctx.send(random.choice(NO))
-            return
-
-        content = ctx.message.content
-        cmd = '{prefix}{invoked_with}'.format(**ctx.__dict__)
-
-        if content == cmd:
-            await ctx.send('owo')
-            return
-
-        cpp_text = content.removeprefix(cmd)[1:]
-
-        # create file with the code
-        cpp_file = Path.cwd() / '_temp.cpp'
-        bin_file = Path.cwd() / '_temp.o'
-        cpp_file.write_text(cpp_text)
-
-        PIPE = asyncio.subprocess.PIPE
-        #DEVNULL = asyncio.subprocess.DEVNULL
-
-        # run gcc compiler in subproc on it
-        # TODO: this doesn't work on uvloop? lol
-        proc = await asyncio.subprocess.create_subprocess_exec(
-            'g++', '_temp.cpp', '-std=c++17',
-            '-o', '_temp.o', '-Wall',
-            stdout=PIPE, stderr=PIPE
-        )
-
-        _, stderr = [x.decode() for x in await proc.communicate()]
-
-        if stderr:
-            # warning/errors
-            await ctx.send(f'```cpp\n{stderr[:1987]}...```')
-            #for part in range(0, len(stderr), 1990):
-            #    await ctx.send(f'```cpp\n{stderr[part:part+1990]}```', force_new=True)
-            if not bin_file.exists():
-                # compilation failed (errors).
-                return
-
-        # run the program in subproc
-        proc = await asyncio.subprocess.create_subprocess_exec(
-            './_temp.o', stdout=PIPE, stderr=PIPE
-        )
-
-        stdout, stderr = [x.decode() for x in await proc.communicate()]
-
-        # remove temp files
-        cpp_file.unlink()
-        bin_file.unlink()
-
-        if out := stdout or stderr:
-            try:
-                await ctx.send(out)
-            except:
-                await ctx.send(traceback.format_exc())
-        #else:
-        #    await ctx.send('Success.')
-
-        await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
-
-    @commands.command()
     async def timeit(self, ctx: Context) -> None:
-        """Parse & execute message via python interpreter."""
+        """Parse & execute python timeit module via bash."""
         if ctx.author.id not in self.whitelist:
             await ctx.send(random.choice(NO))
             return
