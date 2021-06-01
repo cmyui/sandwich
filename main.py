@@ -16,7 +16,6 @@ import sys
 import traceback
 import zipfile
 from collections import namedtuple
-from pathlib import Path
 from typing import Optional
 from typing import Union
 
@@ -138,7 +137,7 @@ class Commands(commands.Cog):
             'collections', 'time', 'inspect', 'math', 'psutil',
             're', 'pickle', 'dill', 'signal', 'numpy',
             'random', 'pprint', 'pathlib', 'hashlib', 'platform',
-            'cpuinfo'
+            'cpuinfo', 'bcrypt'
         ):
             try: # only use ones that're already installed
                 self.namespace[mod_name] = __import__(mod_name)
@@ -403,19 +402,19 @@ class Commands(commands.Cog):
         ))
 
     @commands.command()
-    async def nukeself(self, ctx: Context):
+    async def ns(self, ctx: Context): # nuke self's messages
         is_bot = lambda m: m.author == self.bot.user
         await ctx.channel.purge(check=is_bot, limit=1000)
         await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
 
     @commands.command()
-    async def how(self, ctx: Context) -> None:
-        await ctx.send('magic')
-
-    @commands.command()
-    async def nr(self, ctx: Context) -> None:
+    async def nr(self, ctx: Context) -> None: # nuke reactions
         async for msg in ctx.history():
             await msg.clear_reactions()
+
+    @commands.command()
+    async def how(self, ctx: Context) -> None:
+        await ctx.send('magic')
 
 class Sandwich(commands.Bot):
     def __init__(self, *args, **kwargs) -> None:
