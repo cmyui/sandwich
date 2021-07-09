@@ -149,7 +149,7 @@ class Commands(commands.Cog):
             'aiohttp', 'ast', 'astpretty', 'asyncio', 'os',
             'sys', 'struct', 'discord', 'cmyui', 'datetime',
             'collections', 'time', 'inspect', 'math', 'psutil',
-            're', 'pickle', 'dill', 'signal', 'numpy',
+            're', 'pickle', 'dill', 'signal', 'numpy', 'socket',
             'random', 'pprint', 'pathlib', 'hashlib', 'platform',
             'cpuinfo', 'bcrypt'
         ):
@@ -294,7 +294,7 @@ class Commands(commands.Cog):
                     await ctx.send(f'Response {oversize}B too large (max 3KB).')
                     return
 
-                ret = pprint.pformat(ret)
+                ret = pprint.pformat(ret,compact=True)
             else:
                 if len(ret) > 10000:
                     await ctx.send('Response way too long.')
