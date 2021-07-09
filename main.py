@@ -71,6 +71,19 @@ def sp500_returns(principal: Union[int, float], years: int) -> str:
     return (f'Estimated value after {years}yrs: ${A:,.2f} ({magnitude_fmt(A)}) ⛹️‍♂️\n'
             'https://investor.vanguard.com/etf/profile/VOO')
 
+# math learning stuff
+
+class vec2:
+    def __init__(self, x: Union[int, float], y: Union[int, float]):
+        self.x = x
+        self.y = y
+
+    def __repr__(self) -> str:
+        return f'{{{self.x}, {self.y}}}'
+
+def dist(v1: vec2, v2: vec2) -> float:
+    return ((v2.x - v1.x) ** 2 + (v2.y - v1.y) ** 2) ** (1 / 2)
+
 class Context(commands.Context):
     async def send(self, content = None, force_new = False,
                    **kwargs) -> Optional[discord.Message]:
@@ -129,7 +142,8 @@ class Commands(commands.Cog):
         # a dict for our global variables within the !py command.
         # by default, this has functions to save vars, retrieve saved ones,
         self.namespace = {'save': _save, 'saved': _saved,
-                          'sp500_returns': sp500_returns}
+                          'sp500_returns': sp500_returns,
+                          'vec2': vec2, 'dist': dist}
         # and also contains frequently used modules for ease of access.
         for mod_name in (
             'aiohttp', 'ast', 'astpretty', 'asyncio', 'os',
@@ -143,6 +157,12 @@ class Commands(commands.Cog):
                 self.namespace[mod_name] = __import__(mod_name)
             except ModuleNotFoundError:
                 pass
+
+    @commands.is_owner()
+    @commands.command()
+    async def restart(self, ctx: Context):
+        await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
+        os.execv(sys.executable, [sys.executable] + sys.argv)
 
     @commands.is_owner()
     @commands.command()
