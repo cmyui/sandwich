@@ -42,12 +42,13 @@ NO = tuple([
     'yo m',
     'mask off',
 ] + [
-    f'u may not taste my delicious {x}' for x in [
+    f'u may not taste my delicious {topping}' for topping in [
         'tomatoes', 'lettuce', 'ham', 'chicken', 'cheese',
-        'mayonaise', 'pickles', 'pumpernickel'
+        'mayonaise', 'pickles', 'pumpernickel', 'tomaten chutney',
+        'hot italian giardiniera', 'egg escabeche', 'goat cheese',
+        'philly cheese steak', 'corned beef', 'tarragon yoghurt dressing',
+        'turkey argula'
     ]
-] + [
-
 ])
 
 ORDER_SUFFIXES = ['K', 'M', 'B', 'T', 'Q']
