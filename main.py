@@ -35,21 +35,22 @@ FLAME_ID = 347459855449325570
 CHERRY_ID = 455300278120480770
 REALISTIK_ID = 263413454709194753
 
+SANDWICH_TOPPINGS = [
+    'tomatoes', 'lettuce', 'ham', 'chicken', 'cheese',
+    'mayonaise', 'pickles', 'pumpernickel', 'tomaten chutney',
+    'hot italian giardiniera', 'egg escabeche', 'goat cheese',
+    'philly cheese steak', 'corned beef', 'tarragon yoghurt dressing',
+    'turkey argula'
+]
+
 # what is this lol
-NO = tuple([
+NO = (
     'thou may not take thy toothpick',
     'no',
     'yo m',
     'mask off',
-] + [
-    f'u may not taste my delicious {topping}' for topping in [
-        'tomatoes', 'lettuce', 'ham', 'chicken', 'cheese',
-        'mayonaise', 'pickles', 'pumpernickel', 'tomaten chutney',
-        'hot italian giardiniera', 'egg escabeche', 'goat cheese',
-        'philly cheese steak', 'corned beef', 'tarragon yoghurt dressing',
-        'turkey argula'
-    ]
-])
+    *[f'u may not taste my delicious {t}' for t in SANDWICH_TOPPINGS]
+)
 
 ORDER_SUFFIXES = ['K', 'M', 'B', 'T', 'Q']
 def magnitude_fmt(n: float) -> float:
@@ -60,6 +61,8 @@ def magnitude_fmt(n: float) -> float:
     else:
         # what? we need quintillions? lol
         breakpoint()
+
+# finance stuff
 
 # TODO: let user pass in how many years to calc avg from?
 AVG_SP500_50Y_RETURN = 10.9 / 100
