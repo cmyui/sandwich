@@ -272,6 +272,9 @@ class Commands(commands.Cog):
         else:
             # !py ran successfully.
             await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
+        finally:
+            if '__py' in self.namespace:
+                del self.namespace['__py']
 
         if ret is None:
             # clear any previous responses
@@ -281,7 +284,7 @@ class Commands(commands.Cog):
         # the return value may be from the !save command.
         if isinstance(ret, SavedValue):
             # NOTE: this will overwrite preexisting vars.
-            self.namespace |= {ret.name: ret.value}
+            self.namespace[ret.name] = ret.value
             await ctx.send(f'Added `{ret.name}` to namespace.')
         else:
             truncated = False
