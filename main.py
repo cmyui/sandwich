@@ -155,7 +155,7 @@ class Commands(commands.Cog):
             'collections', 'time', 'inspect', 'math', 'psutil',
             're', 'pickle', 'dill', 'signal', 'numpy', 'socket',
             'random', 'pprint', 'pathlib', 'hashlib', 'platform',
-            'cpuinfo', 'bcrypt'
+            'cpuinfo', 'bcrypt', 'orjson'
         ):
             try: # only use ones that're already installed
                 self.namespace[mod_name] = __import__(mod_name)
@@ -390,7 +390,6 @@ class Commands(commands.Cog):
                     return
 
                 if not (f_content := repo_zip.read(file)):
-                    print(f'Empty file? {fname}')
                     continue
 
                 comments = lang_comments[ext]
