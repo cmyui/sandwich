@@ -53,14 +53,14 @@ NO = (
 )
 
 ORDER_SUFFIXES = ['K', 'M', 'B', 'T', 'Q']
-def magnitude_fmt(n: float) -> float:
+def magnitude_fmt(n: float) -> str:
     for suffix in ORDER_SUFFIXES:
         n /= 1000
         if n < 1000:
             return f'{n:,.3f}{suffix}'
     else:
         # what? we need quintillions? lol
-        breakpoint()
+        raise NotImplementedError(f"{n} too big.")
 
 # finance stuff
 
