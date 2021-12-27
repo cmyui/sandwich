@@ -1,10 +1,11 @@
-#!/usr/bin/python3.9
+#!/usr/bin/python3.10
 # -*- coding: utf-8 -*-
 
 """my personal (messy) discord bot. made (and great) for functionality."""
 
 import asyncio
-import cpuinfo
+import contextlib
+import dis
 import io
 import os
 import platform
@@ -16,15 +17,15 @@ import sys
 import traceback
 import zipfile
 from collections import namedtuple
-from typing import Optional
-from typing import Union
+from types import FunctionType
+from typing import Optional, Union
 
 import aiohttp
 import cmyui
+import cpuinfo
 import discord
 import orjson
-from cmyui import Ansi
-from cmyui import log
+from cmyui import Ansi, log
 from discord.ext import commands
 
 import config
@@ -101,6 +102,57 @@ class Context(commands.Context):
 
         return bot_msg
 
+def get_code_from_message_content(
+    content: str,
+    prefix: str,
+    invoked_with: str,
+) -> str:
+    """Extract the code text from a discord message's content."""
+    cmd_text = content.removeprefix(f'{prefix}{invoked_with} ').strip()
+
+    if cmd_text.startswith('```'):
+        # multi-line code block
+        assert cmd_text.endswith('```'), 'Invalid rich code block'
+
+        cmd_text = cmd_text.removeprefix('```')
+        cmd_text = cmd_text.removesuffix('```')
+
+        # rich syntax
+        for lang_id in ('py', 'python'):
+            if cmd_text.startswith(f'{lang_id}\n'):
+                cmd_text = cmd_text.removeprefix(f'{lang_id}\n')
+    elif cmd_text.startswith('`'):
+        # code block
+        assert cmd_text.endswith('`'), 'Invalid code block'
+
+        cmd_text = cmd_text.removeprefix('`')
+        cmd_text = cmd_text.removesuffix('`')
+    else:
+        # plaintext
+        pass
+
+    # replace sequences of newlines with a single newline
+    cmd_text = '\n'.join(l for l in cmd_text.split('\n') if l)
+
+    # strip any whitespace & newlines from the text
+    cmd_text = cmd_text.strip('`\n\t ')
+
+    return cmd_text
+
+@contextlib.contextmanager
+def capture_stdout(buffer: io.StringIO):
+    # write to buffer rather than real
+    # stdout while we're in this block
+    real_stdout = sys.stdout
+    sys.stdout = buffer
+
+    try:
+        yield
+    finally:
+        # return to real stdout
+        sys.stdout = real_stdout
+        buffer.seek(0)
+
 # used for saving values in `Commands().namespace` from !py land
 SavedValue = namedtuple('SavedValue', ['name', 'value'])
 
@@ -167,11 +219,72 @@ class Commands(commands.Cog):
         await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
 
     @commands.command()
+    async def dis(self, ctx: Context) -> None:
+        if ctx.author.id not in self.whitelist:
+            await ctx.send(random.choice(NO))
+            return
+
+        assert ctx.message is not None
+        assert ctx.invoked_with is not None
+
+        try:
+            code_text = get_code_from_message_content(
+                ctx.message.content,
+                ctx.prefix,
+                ctx.invoked_with,
+            )
+        except AssertionError as exc:
+            await ctx.send(exc.args[0])
+            return
+
+        namespace = {}
+
+        try:
+            exec(code_text, namespace)
+        except:
+            await ctx.send(f'```\n{traceback.format_exc()}```')
+            await ctx.message.add_reaction('\N{CROSS MARK}')
+            return
+
+        # ran successfully.
+        await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
+
+        del namespace['__builtins__']
+
+        if len(namespace) != 1:
+            await ctx.send('Only a single function may be defined in namespace.')
+            return
+
+        func = list(namespace.values())[0]
+
+        if not isinstance(func, FunctionType):
+            await ctx.send('Variable in namespace must be a function.')
+            return
+
+        # capture stdout
+        with io.StringIO() as buffer:
+            with capture_stdout(buffer):
+                dis.dis(func)
+
+            disassembly = buffer.read(-1)
+
+        if disassembly is None:
+            # clear any previous responses
+            await ctx.send(None)
+            return
+
+        await ctx.send(f'```py\n{disassembly}```')
+
+
+    @commands.command()
     async def timeit(self, ctx: Context) -> None:
         """Parse & execute python timeit module via bash."""
         if ctx.author.id not in self.whitelist:
             await ctx.send(random.choice(NO))
             return
+
+        assert ctx.message is not None
+        assert ctx.invoked_with is not None
 
         invoked_with = '{prefix}{invoked_with} '.format(**ctx.__dict__)
         cmd_txt = ctx.message.content.removeprefix(invoked_with)
@@ -199,7 +312,7 @@ class Commands(commands.Cog):
             cpu_name = cpu_info['brand_raw']
             if not cpu_name.endswith('GHz'):
                 cpu_ghz = cpu_info['hz_advertised'][0] / (1000 ** 3)
-                cpu_name += f" @ {cpu_ghz:.2f} GHz"
+                cpu_name += f' @ {cpu_ghz:.2f} GHz'
 
             await ctx.send('{cpu_name} | {python_impl} v{python_version}\n{output}'.format(
                 **cpu_info,
@@ -215,47 +328,26 @@ class Commands(commands.Cog):
             await ctx.send(random.choice(NO))
             return
 
-        content = ctx.message.content
-        cmd = '{prefix}{invoked_with}'.format(**ctx.__dict__)
-
-        if content == cmd:
-            await ctx.send('owo')
-            return
-
-        # remove the command's invocation prefix and strip any
-        # newlines, ticks, and spaces from both ends of the text.
-        f_text = content.removeprefix(cmd).strip('`\n ')
-
-        # replace long sequences of newlines with single ones.
-        f_text = '\n'.join(s for s in f_text.split('\n') if s)
-
-        # remove any discord embed skinning.
-        for prefix in ('py', 'python'):
-            f_text = f_text.removeprefix(f'{prefix}\n')
-
-        f_text = f' {f_text}'.replace('\n', '\n ') # indent
-        f_def = f'async def __py(ctx):\n{f_text}'
+        assert ctx.message is not None
+        assert ctx.invoked_with is not None
 
         try:
-            exec(f_def, self.namespace)             # compile function
+            code_text = get_code_from_message_content(
+                ctx.message.content,
+                ctx.prefix,
+                ctx.invoked_with,
+            )
+        except AssertionError as exc:
+            await ctx.send(exc.args[0])
+            return
+
+        code_text = f' {code_text}'.replace('\n', '\n ') # indent func code
+        func_def = f'async def __py(ctx):\n{code_text}'
+
+        try:
+            exec(func_def, self.namespace)             # compile function
             ret = await self.namespace['__py'](ctx) # await it's return
         except:
-            """
-            # !py failed to compile, or run, get the exception lines.
-            # [2:] to remove useless lines, [:-1] to remove newlines.
-            tb_lines = [l[:-1] for l in traceback.format_exception(
-                *sys.exc_info(), limit = None, chain = True
-            )[2:]]
-
-            '  File "<string>", line 8, in __py'
-            # format the exception output for our (strange) use case.
-            line_num = int(tb_lines.pop(0)[23:]) - 1 # err line num
-            err_line = tb_lines.pop(-1) # err msg
-            tb_msg = '\n'.join([l[4:] for l in tb_lines]) # dedent
-
-            # send back tb in discord chat.
-            await ctx.send(f'**{err_line}** @ L{line_num} ```py\n{tb_msg}```')
-            """
             await ctx.send(f'```{traceback.format_exc()}```')
             await ctx.message.add_reaction('\N{CROSS MARK}')
             return
