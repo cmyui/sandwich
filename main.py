@@ -7,7 +7,6 @@ import asyncio
 import contextlib
 import dis
 import io
-import datetime
 import os
 import platform
 import pprint
@@ -28,7 +27,6 @@ import orjson
 from nextcord.ext import commands
 
 import config
-import funding
 
 SANDWICH_TOPPINGS = [
     "tomatoes",
