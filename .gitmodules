@@ -1,6 +1,3 @@
-[submodule "index-analysis"]
-	path = index-analysis
-	url = git@github.com:cmyui/index-analysis.git
 [submodule "index_analysis"]
 	path = index_analysis
 	url = git@github.com:cmyui/index_analysis.git
