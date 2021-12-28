@@ -1,0 +1,3 @@
+[submodule "funding"]
+	path = funding
+	url = git@github.com:cmyui/funding.git

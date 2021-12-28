@@ -5,6 +5,7 @@
 
 import asyncio
 import contextlib
+import datetime
 import dis
 import io
 import os
@@ -18,15 +19,17 @@ import traceback
 import zipfile
 from collections import namedtuple
 from types import FunctionType
-from typing import Optional, Union
+from typing import Optional
 
 import aiohttp
 import cpuinfo
 import nextcord
 import orjson
+import timeago
 from nextcord.ext import commands
 
 import config
+import funding
 
 SANDWICH_TOPPINGS = [
     "tomatoes",
@@ -71,17 +74,26 @@ def magnitude_fmt(n: float) -> str:
 
 # finance stuff
 
-AVG_SP500_50Y_RETURN = 10.9 / 100
 
+def sp500_analysis(
+    start_date: datetime.date,
+    end_date: datetime.date,
+    starting_balance: float,
+    monthly_contributions: float,
+) -> str:
+    results = funding.analysis.do_analysis(
+        start_date=start_date,
+        end_date=end_date,
+        starting_balance=starting_balance,
+        monthly_contributions=monthly_contributions,
+    )
 
-def sp500_returns(principal: Union[int, float], years: int) -> str:
-    A = principal * (1 + (AVG_SP500_50Y_RETURN / 1)) ** (1 * years)
-    if A >= 1_000_000_000_000_000:
-        return "Too lazy to support >= 1 quadrillion."
+    new_balance = results["ending_balance"] / results["ending_inflation"]
 
     return (
-        f"Estimated value after {years}yrs: ${A:,.2f} ({magnitude_fmt(A)}) ⛹️‍♂️\n"
-        "https://investor.vanguard.com/etf/profile/VOO"
+        f"Estimated value after {timeago.format(end_date, start_date)} "
+        f"(adjusted for inflation): ${new_balance:,.2f}\n"
+        "⛹️‍♂️ https://investor.vanguard.com/etf/profile/VOO"
     )
 
 
@@ -209,7 +221,7 @@ class Commands(commands.Cog):
         self.namespace = {
             "save": _save,
             "saved": _saved,
-            "sp500_returns": sp500_returns,
+            "sp500_analysis": sp500_analysis,
         }
         # and also contains frequently used modules for ease of access.
         # TODO: some better way to do this
