@@ -78,6 +78,9 @@ def sp500_returns(principal: Union[int, float], years: int) -> str:
 class Context(commands.Context):
     async def send(self, content = None, force_new = False,
                    **kwargs) -> Optional[discord.Message]:
+        assert self.message is not None
+        assert self.bot is not None
+
         bot_msg: discord.Message
 
         if force_new or self.message.id not in self.bot.cache['resp']:
@@ -202,18 +205,24 @@ class Commands(commands.Cog):
     @commands.is_owner()
     @commands.command()
     async def restart(self, ctx: Context) -> None:
+        assert ctx.message is not None
+
         await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
         os.execv(sys.executable, [sys.executable] + sys.argv)
 
     @commands.is_owner()
     @commands.command()
     async def addwl(self, ctx: Context) -> None:
+        assert ctx.message is not None
+
         self.whitelist |= set([m.id for m in ctx.message.mentions])
         await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
 
     @commands.is_owner()
     @commands.command()
     async def rmwl(self, ctx: Context) -> None:
+        assert ctx.message is not None
+
         self.whitelist -= set([m.id for m in ctx.message.mentions])
         await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
 
@@ -403,6 +412,8 @@ class Commands(commands.Cog):
         # NOTE: this is quite inaccurate, as doing this correctly
         # would basically require parsing the code for each lang lol.
         # it's just made to get the general idea of the size/ratio.
+        assert ctx.message is not None
+
         if len(msg := ctx.message.content.split(' ')[1:]) < 2:
             await ctx.send('Invalid syntax: !gitlines <repo> <file extensions ...>')
             return
@@ -506,6 +517,8 @@ class Commands(commands.Cog):
 
     @commands.command()
     async def ns(self, ctx: Context) -> None: # nuke self's messages
+        assert ctx.message is not None
+
         is_bot = lambda m: m.author == self.bot.user
         await ctx.channel.purge(check=is_bot, limit=1000)
         await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
@@ -565,16 +578,22 @@ class Sandwich(commands.Bot):
     async def on_message(self, msg: discord.Message) -> None:
         await self.process_commands(msg)
 
-    async def on_message_edit(self, before: discord.Message,
-                              after: discord.Message) -> None:
+    async def on_message_edit(
+        self,
+        before: discord.Message,
+        after: discord.Message
+    ) -> None:
         await self.process_commands(after)
 
     async def on_message_delete(self, msg: discord.Message) -> None:
-        if msg := self.cache['resp'].pop(msg.id, None):
-            await msg.delete()
+        if previous_resp := self.cache['resp'].pop(msg.id, None):
+            await previous_resp.delete()
 
-    async def on_command_error(self, ctx: Context,
-                               error: commands.CommandError) -> None:
+    async def on_command_error(
+        self,
+        ctx: Context,
+        error: commands.CommandError
+    ) -> None:
         if not isinstance(error, commands.errors.CommandNotFound): # ignore unknown cmds
             return await super().on_command_error(ctx, error)
 
