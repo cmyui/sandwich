@@ -1,7 +1,12 @@
 #!/usr/bin/python3.10
 # -*- coding: utf-8 -*-
+"""sandwich - a discord bot i've built for my personal needs; mostly python.
 
-"""my personal (messy) discord bot. made (and great) for functionality."""
+repo: https://github.com/cmyui/sandwich
+"""
+
+__author__ = "Joshua Smith (cmyui)"
+__email__ = "cmyuiosu@gmail.com"
 
 import asyncio
 import contextlib
@@ -375,7 +380,9 @@ class Commands(commands.Cog):
 
         # NOTE: to get accurate results here we have to block
         p = subprocess.Popen(
-            args=bash_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            args=bash_args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
 
         stdout, stderr = p.communicate()
@@ -396,7 +403,7 @@ class Commands(commands.Cog):
                     cpu_name=cpu_name,
                     output=stdout.decode(),
                     python_impl=platform.python_implementation(),
-                )
+                ),
             )
 
     @commands.command()
@@ -514,7 +521,7 @@ class Commands(commands.Cog):
         async with self.bot.http_sess.get(repo_url) as resp:
             if resp.status != 200:
                 await ctx.send(
-                    f'Failed to find repo "{repo}/{branch}" ({resp.status}).'
+                    f'Failed to find repo "{repo}/{branch}" ({resp.status}).',
                 )
                 return
 
@@ -569,9 +576,8 @@ class Commands(commands.Cog):
 
                     if in_multi_line_comment:
                         comment_lines += 1
-                        if len(  # end of multi line comment
-                            line
-                        ) != 3 and line.endswith(multi_line_comment):
+                        # end of multi line comment
+                        if len(line) != 3 and line.endswith(multi_line_comment):
                             in_multi_line_comment = False
                         continue
 
@@ -585,7 +591,7 @@ class Commands(commands.Cog):
 
         await ctx.send(
             "Total linecounts (inaccurate):\n"
-            + "\n".join(f"{k} | {v}" for k, v in line_counts.items())
+            + "\n".join(f"{k} | {v}" for k, v in line_counts.items()),
         )
 
     @commands.command()
@@ -618,7 +624,7 @@ class Sandwich(commands.Bot):
 
     async def run(self, token: str, *args, **kwargs) -> None:
         self.http_sess = aiohttp.ClientSession(
-            json_serialize=lambda x: orjson.dumps(x).decode()
+            json_serialize=lambda x: orjson.dumps(x).decode(),
         )
 
         try:
@@ -642,7 +648,9 @@ class Sandwich(commands.Bot):
         await self.process_commands(msg)
 
     async def on_message_edit(
-        self, before: nextcord.Message, after: nextcord.Message
+        self,
+        before: nextcord.Message,
+        after: nextcord.Message,
     ) -> None:
         await self.process_commands(after)
 
@@ -651,10 +659,13 @@ class Sandwich(commands.Bot):
             await previous_resp.delete()
 
     async def on_command_error(
-        self, ctx: Context, error: commands.CommandError
+        self,
+        ctx: Context,
+        error: commands.CommandError,
     ) -> None:
         if not isinstance(
-            error, commands.errors.CommandNotFound
+            error,
+            commands.errors.CommandNotFound,
         ):  # ignore unknown cmds
             return await super().on_command_error(ctx, error)
 
