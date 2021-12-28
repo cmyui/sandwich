@@ -1,4 +1,4 @@
 config.py
-.vscode/settings.json
+
+.vscode/
 __pycache__/
-/_testing/
