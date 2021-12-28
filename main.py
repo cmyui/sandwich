@@ -23,9 +23,9 @@ from typing import Optional, Union
 
 import aiohttp
 import cpuinfo
-import discord
+import nextcord
 import orjson
-from discord.ext import commands
+from nextcord.ext import commands
 
 import config
 import funding
@@ -90,11 +90,11 @@ def sp500_returns(principal: Union[int, float], years: int) -> str:
 class Context(commands.Context):
     async def send(
         self, content=None, force_new=False, **kwargs
-    ) -> Optional[discord.Message]:
+    ) -> Optional[nextcord.Message]:
         assert self.message is not None
         assert self.bot is not None
 
-        bot_msg: discord.Message
+        bot_msg: nextcord.Message
 
         if force_new or self.message.id not in self.bot.cache["resp"]:
             bot_msg = await super().send(content, **kwargs)
@@ -612,7 +612,7 @@ class Sandwich(commands.Bot):
         finally:
             pass
 
-    async def process_commands(self, message: discord.Message) -> None:
+    async def process_commands(self, message: nextcord.Message) -> None:
         if message.author.bot:
             # don't process messages for bots
             return
@@ -622,15 +622,15 @@ class Sandwich(commands.Bot):
     async def on_ready(self):
         print(f"\x1b[0;92m{self.user} up\x1b[0m")
 
-    async def on_message(self, msg: discord.Message) -> None:
+    async def on_message(self, msg: nextcord.Message) -> None:
         await self.process_commands(msg)
 
     async def on_message_edit(
-        self, before: discord.Message, after: discord.Message
+        self, before: nextcord.Message, after: nextcord.Message
     ) -> None:
         await self.process_commands(after)
 
-    async def on_message_delete(self, msg: discord.Message) -> None:
+    async def on_message_delete(self, msg: nextcord.Message) -> None:
         if previous_resp := self.cache["resp"].pop(msg.id, None):
             await previous_resp.delete()
 
