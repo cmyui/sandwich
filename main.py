@@ -604,29 +604,23 @@ class Sandwich(commands.Bot):
 
         self.add_cog(Commands(self))
 
-    def run(self, token: str, *args, **kwargs) -> None:
-        async def runner():
-            self.http_sess = aiohttp.ClientSession(json_serialize=orjson.dumps)
-
-            try:
-                await self.start(token, *args, **kwargs)
-            except:
-                await self.http_sess.close()
-                await self.close()
-
-        loop = asyncio.get_event_loop()
-        loop.create_task(runner())
+    async def run(self, token: str, *args, **kwargs) -> None:
+        self.http_sess = aiohttp.ClientSession(
+            json_serialize=lambda x: orjson.dumps(x).decode()
+        )
 
         try:
-            loop.run_forever()
-        finally:
-            pass
+            await self.start(token, *args, **kwargs)
+        except:
+            await self.http_sess.close()
+            await self.close()
 
-    async def process_commands(self, message: nextcord.Message) -> None:
-        if message.author.bot:
+    async def process_commands(self, msg: nextcord.Message) -> None:
+        if msg.author.bot:
             # don't process messages for bots
             return
-        ctx = await self.get_context(message, cls=Context)
+
+        ctx = await self.get_context(msg, cls=Context)
         await self.invoke(ctx)
 
     async def on_ready(self):
@@ -653,7 +647,15 @@ class Sandwich(commands.Bot):
             return await super().on_command_error(ctx, error)
 
 
-if __name__ == "__main__":
+def main() -> int:
+    # set cwd to main directory
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
+
     bot = Sandwich(command_prefix="!", help_command=None)
-    bot.run(config.discord_token)
+    asyncio.run(bot.run(config.discord_token))
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
