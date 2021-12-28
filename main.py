@@ -202,19 +202,19 @@ class Commands(commands.Cog):
 
     @commands.is_owner()
     @commands.command()
-    async def restart(self, ctx: Context):
+    async def restart(self, ctx: Context) -> None:
         await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
         os.execv(sys.executable, [sys.executable] + sys.argv)
 
     @commands.is_owner()
     @commands.command()
-    async def addwl(self, ctx: Context):
+    async def addwl(self, ctx: Context) -> None:
         self.whitelist |= set([m.id for m in ctx.message.mentions])
         await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
 
     @commands.is_owner()
     @commands.command()
-    async def rmwl(self, ctx: Context):
+    async def rmwl(self, ctx: Context) -> None:
         self.whitelist -= set([m.id for m in ctx.message.mentions])
         await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
 
@@ -399,7 +399,7 @@ class Commands(commands.Cog):
                 )
 
     @commands.command()
-    async def gitlines(self, ctx: Context):
+    async def gitlines(self, ctx: Context) -> None:
         """Retrieve the linecounts (code, comments) for a given repo & lang."""
         # NOTE: this is quite inaccurate, as doing this correctly
         # would basically require parsing the code for each lang lol.
@@ -506,7 +506,7 @@ class Commands(commands.Cog):
         ))
 
     @commands.command()
-    async def ns(self, ctx: Context): # nuke self's messages
+    async def ns(self, ctx: Context) -> None: # nuke self's messages
         is_bot = lambda m: m.author == self.bot.user
         await ctx.channel.purge(check=is_bot, limit=1000)
         await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
