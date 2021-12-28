@@ -69,8 +69,7 @@ def magnitude_fmt(n: float) -> str:
 AVG_SP500_50Y_RETURN = 10.9 / 100
 def sp500_returns(principal: Union[int, float], years: int) -> str:
     A = principal * (1 + (AVG_SP500_50Y_RETURN / 1)) ** (1 * years)
-
-    if A > 1_000_000_000_000_000:
+    if A >= 1_000_000_000_000_000:
         return 'Too lazy to support >= 1 quadrillion.'
 
     return (f'Estimated value after {years}yrs: ${A:,.2f} ({magnitude_fmt(A)}) ⛹️‍♂️\n'
