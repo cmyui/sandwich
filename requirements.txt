@@ -9,4 +9,5 @@ multidict==5.2.0
 nextcord==2.0.0a4
 orjson==3.6.5
 py-cpuinfo==8.0.0
+timeago==1.0.15
 yarl==1.7.2

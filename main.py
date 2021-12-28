@@ -29,7 +29,7 @@ import timeago
 from nextcord.ext import commands
 
 import config
-import funding
+import index_analysis
 
 SANDWICH_TOPPINGS = [
     "tomatoes",
@@ -81,7 +81,7 @@ def sp500_analysis(
     starting_balance: float,
     monthly_contributions: float,
 ) -> str:
-    results = funding.analysis.do_analysis(
+    results = index_analysis.analysis.do_analysis(
         start_date=start_date,
         end_date=end_date,
         starting_balance=starting_balance,
