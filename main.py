@@ -16,6 +16,7 @@ import shlex
 import subprocess
 import sys
 import traceback
+import urllib.parse
 import zipfile
 from collections import namedtuple
 from types import FunctionType
@@ -260,6 +261,17 @@ class Commands(commands.Cog):
                 self.namespace[mod_name] = __import__(mod_name)
             except ModuleNotFoundError:
                 pass
+
+    @commands.command(name="g")
+    async def google(self, ctx: Context) -> None:
+        assert ctx.message is not None
+
+        invoked_with = "{prefix}{invoked_with} ".format(**ctx.__dict__)
+        content = urllib.parse.quote_plus(
+            ctx.message.content.removeprefix(invoked_with),
+        ).strip()
+
+        await ctx.send(f"https://google.com/search?q={content}")
 
     @commands.is_owner()
     @commands.command()
