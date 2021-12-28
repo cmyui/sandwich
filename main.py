@@ -22,11 +22,9 @@ from types import FunctionType
 from typing import Optional, Union
 
 import aiohttp
-import cmyui
 import cpuinfo
 import discord
 import orjson
-from cmyui import Ansi, log
 from discord.ext import commands
 
 import config
@@ -590,7 +588,6 @@ class Sandwich(commands.Bot):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self.db: cmyui.AsyncSQLPool
         self.http_sess: aiohttp.ClientSession
 
         self.cache = {"resp": {}}  # many kinds
@@ -599,16 +596,12 @@ class Sandwich(commands.Bot):
 
     def run(self, token: str, *args, **kwargs) -> None:
         async def runner():
-            self.db = cmyui.AsyncSQLPool()
-            await self.db.connect(config.mysql)
-
             self.http_sess = aiohttp.ClientSession(json_serialize=orjson.dumps)
 
             try:
                 await self.start(token, *args, **kwargs)
             except:
                 await self.http_sess.close()
-                await self.db.close()
                 await self.close()
 
         loop = asyncio.get_event_loop()
@@ -627,7 +620,7 @@ class Sandwich(commands.Bot):
         await self.invoke(ctx)
 
     async def on_ready(self):
-        log(f"{self.user} up", Ansi.LGREEN)
+        print(f"\x1b[0;92m{self.user} up\x1b[0m")
 
     async def on_message(self, msg: discord.Message) -> None:
         await self.process_commands(msg)
