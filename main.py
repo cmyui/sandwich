@@ -393,7 +393,7 @@ class Commands(commands.Cog):
 
             cpu_name = cpu_info["brand_raw"]
             if not cpu_name.endswith("GHz"):
-                cpu_ghz = cpu_info["hz_advertised"][0] / (1000 ** 3)
+                cpu_ghz = cpu_info["hz_advertised"][0] / (1000**3)
                 cpu_name += f" @ {cpu_ghz:.2f} GHz"
 
             await ctx.send(
@@ -528,7 +528,7 @@ class Commands(commands.Cog):
                 await ctx.send(f"Invalid response (CT: {resp.content_type}).")
                 return
 
-            size_MB = resp.content.total_bytes // (1024 ** 3)
+            size_MB = resp.content.total_bytes // (1024**3)
 
             if size_MB >= 2:
                 await ctx.send(f"Repo too big ({size_MB:,.2f}MB).")
