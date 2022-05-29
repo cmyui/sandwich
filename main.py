@@ -1,4 +1,4 @@
-#!/usr/bin/python3.10
+#!/usr/bin/env python3.10
 """sandwich - a discord bot i've built for my personal needs; mostly python.
 
 repo: https://github.com/cmyui/sandwich
@@ -669,15 +669,15 @@ class Sandwich(commands.Bot):
             return await super().on_command_error(ctx, error)
 
 
-def main() -> int:
+async def main() -> int:
     # set cwd to main directory
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
     bot = Sandwich(command_prefix="!", help_command=None)
-    asyncio.run(bot.run(config.discord_token))
+    await bot.run(config.discord_token)
 
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(asyncio.run(main()))
