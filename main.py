@@ -1,5 +1,4 @@
 #!/usr/bin/python3.10
-# -*- coding: utf-8 -*-
 """sandwich - a discord bot i've built for my personal needs; mostly python.
 
 repo: https://github.com/cmyui/sandwich
@@ -29,10 +28,10 @@ from typing import Optional
 
 import aiohttp
 import cpuinfo
-import nextcord
+import discord
 import orjson
 import timeago
-from nextcord.ext import commands
+from discord.ext import commands
 
 import config
 import index_analysis
@@ -106,11 +105,11 @@ def sp500_analysis(
 class Context(commands.Context):
     async def send(
         self, content=None, force_new=False, **kwargs
-    ) -> Optional[nextcord.Message]:
+    ) -> Optional[discord.Message]:
         assert self.message is not None
         assert self.bot is not None
 
-        bot_msg: nextcord.Message
+        bot_msg: discord.Message
 
         if force_new or self.message.id not in self.bot.cache["resp"]:
             bot_msg = await super().send(content, **kwargs)
@@ -633,7 +632,7 @@ class Sandwich(commands.Bot):
             await self.http_sess.close()
             await self.close()
 
-    async def process_commands(self, msg: nextcord.Message) -> None:
+    async def process_commands(self, msg: discord.Message) -> None:
         if msg.author.bot:
             # don't process messages for bots
             return
@@ -644,17 +643,17 @@ class Sandwich(commands.Bot):
     async def on_ready(self):
         print(f"\x1b[0;92m{self.user} up\x1b[0m")
 
-    async def on_message(self, msg: nextcord.Message) -> None:
+    async def on_message(self, msg: discord.Message) -> None:
         await self.process_commands(msg)
 
     async def on_message_edit(
         self,
-        before: nextcord.Message,
-        after: nextcord.Message,
+        before: discord.Message,
+        after: discord.Message,
     ) -> None:
         await self.process_commands(after)
 
-    async def on_message_delete(self, msg: nextcord.Message) -> None:
+    async def on_message_delete(self, msg: discord.Message) -> None:
         if previous_resp := self.cache["resp"].pop(msg.id, None):
             await previous_resp.delete()
 
