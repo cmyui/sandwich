@@ -19,6 +19,8 @@ import random
 import shlex
 import subprocess
 import sys
+import tempfile
+import textwrap
 import traceback
 import urllib.parse
 import zipfile
@@ -29,12 +31,14 @@ from typing import Optional
 import aiohttp
 import cpuinfo
 import discord
+import index_analysis
 import orjson
 import timeago
 from discord.ext import commands
 
 import config
-import index_analysis
+import conversations
+import git
 
 SANDWICH_TOPPINGS = [
     "tomatoes",
@@ -300,6 +304,70 @@ class Commands(commands.Cog):
 
         self.whitelist -= set([m.id for m in ctx.message.mentions])
         await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
+
+    @commands.command()
+    async def review(self, ctx: Context) -> None:
+        if ctx.author.id not in self.whitelist:
+            await ctx.send(random.choice(NO))
+            return
+
+        assert ctx.message is not None
+        assert ctx.invoked_with is not None
+
+        repository = ctx.message.content.removeprefix(f"{ctx.prefix}{ctx.invoked_with} ")
+        if " " in repository:
+            await ctx.send("no")
+            return
+
+        try:
+            urllib.parse.urlparse(repository)
+        except:
+            await ctx.send("invalid url")
+            return
+
+        conversation = conversations.create_conversation()
+
+        # to send the repository contents to the API, we need to read the
+        # files and concatenate them into a single string.
+        repository_content = ""
+
+        try:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                exit_code = git.clone_repository(repository, tmpdir)
+                if exit_code != 0:
+                    await ctx.send("failed to clone")
+                    return
+
+                for file_path in git.find_files(
+                    tmpdir, patterns=[
+                        "*.py", "*.cfg",
+                        "*.ini", "*.json",
+                        "*.md", "*.txt",
+                        "*.yml", "*.yaml",
+                    ],
+                ):
+                    with open(file_path, "r") as file:
+                        file_content = file.read()
+
+                    repository_content += f"# File: {file_path.removeprefix(tmpdir)}"
+                    repository_content += "\n\n"
+                    repository_content += file_content
+                    repository_content += "\n\n\n"
+
+                repository_content = repository_content.rstrip("\n")
+
+        except Exception as exc:
+            traceback.print_exc()
+            breakpoint()
+            raise
+
+        question = textwrap.dedent(f"""\
+            I am looking to improve some code, which I've sent below.
+            Do you see any possible improvements?""") + "\n\n" + repository_content
+        response = conversations.send_message(conversation, question)
+
+        await ctx.send(response)
+        return
 
     @commands.command()
     async def dis(self, ctx: Context) -> None:
