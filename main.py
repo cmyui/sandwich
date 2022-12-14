@@ -19,8 +19,6 @@ import random
 import shlex
 import subprocess
 import sys
-import tempfile
-import textwrap
 import traceback
 import urllib.parse
 import zipfile
@@ -31,14 +29,16 @@ from typing import Optional
 import aiohttp
 import cpuinfo
 import discord
+import openai
 import index_analysis
 import orjson
 import timeago
 from discord.ext import commands
 
 import config
-import conversations
-import git
+
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 SANDWICH_TOPPINGS = [
     "tomatoes",
@@ -218,13 +218,18 @@ class Commands(commands.Cog):
         if not (uname.nodename == "cmyui" or "microsoft-standard-WSL" in uname.release):
             self.whitelist |= {
                 828821094559514600,  # cover
-                347459855449325600,  # flame
+                347459855449325570,  # flame
                 455300278120480800,  # cherry
                 263413454709194750,  # realistik
                 272111921610752003,  # james
                 291927822635761665,  # lenforiee
+                153954447247147018,  # rapha
             }
-
+            self.whitelist_ai = {
+                109573180867252224,
+                597404438721986560,
+                1011439359083413564,
+            }
         # a dict for our global variables within the !py command.
         # by default, this has functions to save vars, retrieve saved ones,
         self.namespace = {
@@ -306,68 +311,59 @@ class Commands(commands.Cog):
         await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
 
     @commands.command()
-    async def review(self, ctx: Context) -> None:
-        if ctx.author.id not in self.whitelist:
+    async def genimage(self, ctx: Context) -> None:
+        whitelist = self.whitelist | self.whitelist_ai
+
+        if ctx.author.id not in whitelist:
             await ctx.send(random.choice(NO))
             return
 
         assert ctx.message is not None
         assert ctx.invoked_with is not None
 
-        repository = ctx.message.content.removeprefix(f"{ctx.prefix}{ctx.invoked_with} ")
-        if " " in repository:
-            await ctx.send("no")
+        prompt = ctx.message.content.removeprefix(
+            f"{ctx.prefix}{ctx.invoked_with} "
+        ).strip()
+
+        openai.api_key = os.getenv("OPENAI_API_KEY")
+        response = openai.Image.create(prompt=prompt, n=1, size="1024x1024")
+
+        # TODO: price?
+
+        await ctx.send(response.data[0].url)
+
+    @commands.command()
+    async def askai(self, ctx: Context) -> None:
+        whitelist = self.whitelist | self.whitelist_ai
+
+        if ctx.author.id not in whitelist:
+            await ctx.send(random.choice(NO))
             return
 
-        try:
-            urllib.parse.urlparse(repository)
-        except:
-            await ctx.send("invalid url")
-            return
+        assert ctx.message is not None
+        assert ctx.invoked_with is not None
 
-        conversation = conversations.create_conversation()
+        prompt = ctx.message.content.removeprefix(
+            f"{ctx.prefix}{ctx.invoked_with} "
+        ).strip()
 
-        # to send the repository contents to the API, we need to read the
-        # files and concatenate them into a single string.
-        repository_content = ""
+        response = openai.Completion.create(
+            model="text-davinci-003",
+            prompt=prompt,
+            temperature=0.9,  # TODO: configurable
+            max_tokens=2048,  # TODO: configurable?
+        )
+        if len(response.choices) != 1:
+            print("More than 1 choice!")
+            print("\n\n", response.choices, "\n\n")
 
-        try:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                exit_code = git.clone_repository(repository, tmpdir)
-                if exit_code != 0:
-                    await ctx.send("failed to clone")
-                    return
+        response_text = response.choices[0].text.lstrip("\n")
+        cents_spent = (response.usage.total_tokens * (0.02 / 1000)) * 100
 
-                for file_path in git.find_files(
-                    tmpdir, patterns=[
-                        "*.py", "*.cfg",
-                        "*.ini", "*.json",
-                        "*.md", "*.txt",
-                        "*.yml", "*.yaml",
-                    ],
-                ):
-                    with open(file_path, "r") as file:
-                        file_content = file.read()
-
-                    repository_content += f"# File: {file_path.removeprefix(tmpdir)}"
-                    repository_content += "\n\n"
-                    repository_content += file_content
-                    repository_content += "\n\n\n"
-
-                repository_content = repository_content.rstrip("\n")
-
-        except Exception as exc:
-            traceback.print_exc()
-            breakpoint()
-            raise
-
-        question = textwrap.dedent(f"""\
-            I am looking to improve some code, which I've sent below.
-            Do you see any possible improvements?""") + "\n\n" + repository_content
-        response = conversations.send_message(conversation, question)
-
-        await ctx.send(response)
-        return
+        # TODO: handle messages > 2000 chars
+        await ctx.send(
+            f"Spent {cents_spent:.5f}¢ ({response.usage.total_tokens} tokens) to produce result:\n\n{response_text}"
+        )
 
     @commands.command()
     async def dis(self, ctx: Context) -> None:
