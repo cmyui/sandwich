@@ -331,6 +331,51 @@ class Commands(commands.Cog):
         # TODO: price?
 
         await ctx.send(response.data[0].url)
+    
+    @commands.command(name="w")
+    async def wolfram(self, ctx: Context) -> None:
+        whitelist = self.whitelist
+
+        if ctx.author.id not in whitelist:
+            await ctx.send(random.choice(NO))
+            return
+
+        assert ctx.message is not None
+        assert ctx.invoked_with is not None
+
+        prompt = ctx.message.content.removeprefix(
+            f"{ctx.prefix}{ctx.invoked_with} "
+        ).strip()
+
+        api_key = config.wolfram_token
+        query = prompt
+        width = 800
+        font_size = 30
+        background = '282530'
+        foreground = 'white'
+
+        if not api_key:
+            await ctx.send("API key is missing!")
+            return
+
+        url = 'http://api.wolframalpha.com/v1/simple?appid={}&i={}%3F&width={}&fontsize={}&background={}&foreground={}'.format(
+                api_key, query, width, font_size, background, foreground)
+
+        async with self.bot.http_sess.get(url) as resp:
+            if resp.status != 200:
+                await ctx.send(
+                    f'Failed to access the API.',
+                )
+                return
+
+            with io.BytesIO(await resp.read()) as file:
+                from PIL import Image
+                image = Image.open(file)
+                image.save('image.png')
+                with open("image.png", "rb") as f:
+                    wolfram_file = discord.File(f)
+                    await ctx.send(file = wolfram_file)
+                os.remove('image.png')
 
     @commands.command()
     async def askai(self, ctx: Context) -> None:
