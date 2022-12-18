@@ -13,3 +13,4 @@ py-cpuinfo==8.0.0
 timeago==1.0.15
 typing_extensions==4.2.0
 yarl==1.7.2
+openai==0.25.0

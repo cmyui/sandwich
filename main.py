@@ -360,7 +360,20 @@ class Commands(commands.Cog):
         response_text = response.choices[0].text.lstrip("\n")
         cents_spent = (response.usage.total_tokens * (0.02 / 1000)) * 100
 
-        # TODO: handle messages > 2000 chars
+        if len(response_text) > 2000:
+            try:
+                with open(f"/tmp/{response.openai_id}.txt", "w") as f:
+                    f.write(response_text)
+            except Exception:
+                await ctx.send("Failed to write the response to file.")
+                return
+
+            response_file = discord.File(f"/tmp/{response.openai_id}", "response.txt")
+            await ctx.send(f"Spent {cents_spent:.5f}¢ ({response.usage.total_tokens} tokens) to produce result:", file=response_file)
+            with contextlib.suppress(BaseException):
+                os.remove(f"/tmp/{response.openai_id}.txt")
+            return
+        
         await ctx.send(
             f"Spent {cents_spent:.5f}¢ ({response.usage.total_tokens} tokens) to produce result:\n\n{response_text}"
         )
