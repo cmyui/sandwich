@@ -361,11 +361,13 @@ class Commands(commands.Cog):
         cents_spent = (response.usage.total_tokens * (0.02 / 1000)) * 100
 
         if len(response_text) > 2000:
-            response_file = discord.File(io.StringIO(response_text), "response.txt")
-            await ctx.send(
-                f"Spent {cents_spent:.5f}¢ ({response.usage.total_tokens} tokens) to produce result:", 
-                file=response_file
-            )
+            with io.StringIO(response_text) as f:
+                response_file = discord.File(f, "response.txt")
+                await ctx.send(
+                    f"Spent {cents_spent:.5f}¢ ({response.usage.total_tokens} tokens) to produce result:", 
+                    file=response_file
+                )
+            
             return
         
         await ctx.send(
