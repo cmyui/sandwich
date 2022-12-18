@@ -360,7 +360,16 @@ class Commands(commands.Cog):
         response_text = response.choices[0].text.lstrip("\n")
         cents_spent = (response.usage.total_tokens * (0.02 / 1000)) * 100
 
-        # TODO: handle messages > 2000 chars
+        if len(response_text) > 2000:
+            with io.StringIO(response_text) as f:
+                response_file = discord.File(f, "response.txt")
+                await ctx.send(
+                    f"Spent {cents_spent:.5f}¢ ({response.usage.total_tokens} tokens) to produce result:", 
+                    file=response_file
+                )
+            
+            return
+        
         await ctx.send(
             f"Spent {cents_spent:.5f}¢ ({response.usage.total_tokens} tokens) to produce result:\n\n{response_text}"
         )
