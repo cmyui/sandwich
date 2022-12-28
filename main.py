@@ -405,13 +405,11 @@ class Commands(commands.Cog):
         # ran successfully.
         await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
 
-        del namespace["__builtins__"]
-
-        if len(namespace) != 1:
-            await ctx.send("Only a single function may be defined in namespace.")
+        if "func" not in namespace:
+            await ctx.send("No variable named `func` in namespace.")
             return
 
-        func = list(namespace.values())[0]
+        func = namespace["func"]
 
         if not isinstance(func, FunctionType):
             await ctx.send("Variable in namespace must be a function.")
