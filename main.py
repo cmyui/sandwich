@@ -569,6 +569,7 @@ class Commands(commands.Cog):
         # TODO: better multi-line support
         lang_comments = {
             "py": {"single": "#", "multi": ('"""', "'''")},  # wrong but okay for now
+            "pyx": {"single": "#", "multi": ('"""', "'''")},
             #'go': {'single': '//', 'multi': ()},
             #'js': {'single': '//', 'multi': ()},
             #'ts': {'single': '//', 'multi': ()},
