@@ -570,9 +570,19 @@ class Commands(commands.Cog):
         lang_comments = {
             "py": {"single": "#", "multi": ('"""', "'''")},  # wrong but okay for now
             "pyx": {"single": "#", "multi": ('"""', "'''")},
-            #'go': {'single': '//', 'multi': ()},
-            #'js': {'single': '//', 'multi': ()},
-            #'ts': {'single': '//', 'multi': ()},
+            "cs": {"single": "//", "multi": ("/*", "*/")}, # should handle XML comments too?
+            "c": {"single": "//", "multi": ("/*", "*/")},
+            "cpp": {"single": "//", "multi": ("/*", "*/")},
+            "h": {"single": "//", "multi": ("/*", "*/")},
+            "hpp": {"single": "//", "multi": ("/*", "*/")},
+            "js": {'single': "//", "multi": ("/*", "*/")},
+            "ts": {'single': "//", "multi": ("/*", "*/")},
+            "go": {'single': "//", "multi": ("/*", "*/")},
+            "sh": {'single': "#", "multi": ()},
+            "bas": {'single': "REM", "multi": ()},
+            "bat": {'single': "REM", "multi": ()},
+            "cmd": {'single': "REM", "multi": ()},
+            "ps1": {'single': "#", "multi": ("<#", "#>")},
         }
 
         repo, *exts = msg
