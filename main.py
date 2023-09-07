@@ -347,6 +347,15 @@ class Commands(commands.Cog):
             f"{ctx.prefix}{ctx.invoked_with} "
         ).strip()
 
+        for attachment in ctx.message.attachments:
+            # only accept text
+            if attachment.content_type in (
+                "text/plain",
+                "text/markdown",
+                "text/x-python",
+            ):
+                prompt += "\n\n" + (await attachment.read()).decode()
+
         response = openai.Completion.create(
             model="text-davinci-003",
             prompt=prompt,
@@ -364,12 +373,12 @@ class Commands(commands.Cog):
             with io.StringIO(response_text) as f:
                 response_file = discord.File(f, "response.txt")
                 await ctx.send(
-                    f"Spent {cents_spent:.5f}¢ ({response.usage.total_tokens} tokens) to produce result:", 
-                    file=response_file
+                    f"Spent {cents_spent:.5f}¢ ({response.usage.total_tokens} tokens) to produce result:",
+                    file=response_file,
                 )
-            
+
             return
-        
+
         await ctx.send(
             f"Spent {cents_spent:.5f}¢ ({response.usage.total_tokens} tokens) to produce result:\n\n{response_text}"
         )
